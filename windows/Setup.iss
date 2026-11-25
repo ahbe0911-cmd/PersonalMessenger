@@ -1,7 +1,7 @@
 [Setup]
 AppId={{D9CB9A92-E238-4316-A38B-FAF130E28A99}
 AppName=Personal Messenger
-AppVersion=1.0.0
+AppVersion=1.0.1
 AppPublisher=Personal Messenger
 DefaultDirName={localappdata}\Programs\PersonalMessenger
 DefaultGroupName=Personal Messenger
