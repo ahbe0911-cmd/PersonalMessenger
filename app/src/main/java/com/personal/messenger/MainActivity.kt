@@ -1,6 +1,13 @@
 package com.personal.messenger
 
 import android.os.Bundle
+import android.os.Build
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -27,6 +34,13 @@ class MainActivity : ComponentActivity() {
             val vm: ChatViewModel = viewModel()
             val state by vm.state.collectAsStateWithLifecycle()
             val dark = state.dark ?: isSystemInDarkTheme()
+            val askNotifications=rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()){}
+            LaunchedEffect(state.deviceName){
+                if(state.deviceName!=null&&Build.VERSION.SDK_INT>=33&&ContextCompat.checkSelfPermission(this@MainActivity,Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){
+                    val p=getSharedPreferences("appearance",0)
+                    if(!p.getBoolean("asked_notifications",false)){p.edit().putBoolean("asked_notifications",true).apply();askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)}
+                }
+            }
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 DisposableEffect(vm) {
                     val observer = LifecycleEventObserver { _, event ->

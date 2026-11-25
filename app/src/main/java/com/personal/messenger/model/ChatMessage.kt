@@ -2,7 +2,7 @@ package com.personal.messenger.model
 
 import java.util.UUID
 
-enum class MessageStatus { SENT, DELIVERED, READ }
+enum class MessageStatus { SENT, DELIVERED, READ, QUEUED, FAILED }
 data class ChatMessage(
     val id: String = UUID.randomUUID().toString(),
     val text: String,

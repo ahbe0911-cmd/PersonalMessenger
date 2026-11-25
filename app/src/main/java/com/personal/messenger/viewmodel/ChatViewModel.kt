@@ -21,30 +21,42 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     val state = mutable.asStateFlow()
     private val api = MessengerApi()
     private val store = SecureSessionStore(app)
-    private val lock = Mutex()
+    private val lock = SyncGate.lock
+    private val cache = LocalChatStore(app)
+    private var failures=0
+    private var idle=0
+    private val prefs=app.getSharedPreferences("appearance",0)
     private var session: Session? = null
     private var cursor = 0L
     private var poll: Job? = null
     private var active = false
-    private var pending: Pending? = null
-    private data class Pending(val id: String, val text: String, val reply: String?)
+    private suspend fun loadCache(s:Session){
+        val snapshot=withContext(Dispatchers.IO){cache.prepare(s.id);Pair(cache.cursor(),cache.messages())}
+        cursor=snapshot.first;mutable.update{it.copy(messages=snapshot.second)}
+    }
 
     init {
         viewModelScope.launch {
             lock.withLock {
                 session = withContext(Dispatchers.IO) { store.read() }
-                mutable.update { it.copy(initializing=false, deviceName=session?.name, connection=if(session==null) "" else "در حال اتصال") }
+                try{val s=session;if(s!=null){loadCache(s);BackgroundSchedule.start(getApplication<Application>())}else withContext(Dispatchers.IO){cache.clear()}}
+                catch(e:Exception){if(e is CancellationException)throw e;report("حافظه محلی قابل خواندن نیست.")}
+                mutable.update { it.copy(initializing=false, deviceName=session?.name, connection=if(session==null) "" else "در حال اتصال",dark=if(prefs.contains("dark"))prefs.getBoolean("dark",false)else null) }
             }
             startPoll()
         }
     }
-    fun foreground(on: Boolean) { active=on; if(on) startPoll() else { poll?.cancel(); poll=null } }
+    fun foreground(on:Boolean){
+        active=on;SyncGate.foreground=on
+        if(on){(getApplication<Application>().getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager).cancel(101);startPoll()}
+        else{poll?.cancel();poll=null;if(session!=null)BackgroundSchedule.send(getApplication<Application>())}
+    }
     private fun startPoll() {
         if(!active || session==null || poll?.isActive==true) return
         poll=viewModelScope.launch {
-            while(isActive) {
+            while(isActive&&session!=null) {
                 lock.withLock { syncLocked() }
-                delay(3000)
+                delay(RetryPolicy.delayMs(failures,idle))
             }
         }
     }
@@ -59,7 +71,9 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                         if(e is CancellationException) throw e
                         runCatching { api.revoke(s) }; throw e
                     }
-                    session=s;cursor=0;pending=null
+                    session=s;cursor=0;failures=0;idle=0
+                    withContext(Dispatchers.IO){cache.prepare(s.id)}
+                    BackgroundSchedule.start(getApplication<Application>())
                     mutable.update { it.copy(deviceName=s.name,connection="در حال همگام‌سازی",messages=emptyList(),error=null) }
                 } catch(e: Exception) {
                     if(e is CancellationException) throw e
@@ -85,8 +99,9 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
     private suspend fun clearLocked(message: String?) {
-        withContext(Dispatchers.IO) { store.clear() }
-        session=null;cursor=0;pending=null
+        withContext(Dispatchers.IO) { store.clear();cache.clear() }
+        BackgroundSchedule.stop(getApplication<Application>())
+        session=null;cursor=0;failures=0;idle=0
         mutable.update { ChatState(dark=it.dark,initializing=false,error=message) }
     }
     private fun error(e: Exception): String = when {
@@ -97,56 +112,77 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun handle(e: Exception) {
         if(e is CancellationException) throw e
         if(e is ApiException && e.status==401) clearLocked("نشست معتبر نیست. دوباره وارد شوید.")
-        else mutable.update { it.copy(connection="ارتباط قطع است",error=error(e)) }
+        else { failures=(failures+1).coerceAtMost(6);mutable.update { it.copy(connection="آفلاین · پیام‌ها محفوظ‌اند") } }
     }
     private suspend fun syncLocked() {
         val s=session ?: return
         try {
-            val map=mutable.value.messages.associateBy { it.id }.toMutableMap()
-            var more=true;var rounds=0
-            while(more && rounds++<8) {
+            // A background worker may have confirmed queued messages before this activity resumed.
+            val queued=withContext(Dispatchers.IO){cache.queued()}
+            if(queued.isNotEmpty())idle=0
+            for(m in queued){
+                try{upsert(api.send(s,m.id,m.text,m.replyTo))}
+                catch(e:ApiException){
+                    if(RetryPolicy.permanent(e.status))upsert(m.copy(status=MessageStatus.FAILED))else throw e
+                }
+            }
+            var more=true;var rounds=0;var changed=false
+            while(more&&rounds++<8){
                 val page=api.sync(s,cursor)
-                page.events.forEach { event ->
-                    val message=event.message
-                    if(message==null) map.remove(event.id) else map[event.id]=message
+                if(page.events.isNotEmpty()||page.cursor!=cursor){
+                    withContext(Dispatchers.IO){cache.applyPage(page)}
+                    cursor=page.cursor;changed=true
                 }
-                cursor=page.cursor;more=page.hasMore
-                mutable.update { it.copy(messages=map.values.sortedWith(compareBy<ChatMessage>{m->m.timestamp}.thenBy{m->m.id}),
-                    connection=if(more) "در حال دریافت تاریخچه" else "متصل · همگام‌سازی فعال") }
+                more=page.hasMore
             }
-            if(active) {
-                map.values.filter { !it.outgoing && it.status!=MessageStatus.READ }.take(15).forEach { m ->
-                    try { upsert(api.receipt(s,m.id)) }
-                    catch(e: ApiException) { if(e.status!=404 && e.status!=410) throw e }
+            if(changed||idle==0)loadCache(s)
+            if(active&&!more){
+                withContext(Dispatchers.IO){cache.markNotice(cursor)}
+                mutable.value.messages.filter{!it.outgoing&&it.status!=MessageStatus.READ}.take(15).forEach{m->
+                    try{upsert(api.receipt(s,m.id))}
+                    catch(e:ApiException){if(e.status!=404&&e.status!=410)throw e}
                 }
             }
-        } catch(e: Exception) { handle(e) }
+            failures=0;idle=if(changed)0 else (idle+1).coerceAtMost(20)
+            mutable.update{it.copy(connection=if(more)"در حال دریافت تاریخچه" else "متصل · همگام‌سازی فعال")}
+        }catch(e:Exception){handle(e)}
     }
-    fun refresh() { viewModelScope.launch { lock.withLock { syncLocked() } } }
-    fun dismissError() = mutable.update { it.copy(error=null) }
-    fun draft(value: String) = mutable.update { it.copy(draft=value.take(16000)) }
-    fun search(value: String) = mutable.update { it.copy(query=value) }
-    fun theme(currentDark: Boolean) = mutable.update { it.copy(dark=!currentDark) }
-    fun reply(id: String?) = mutable.update { it.copy(replyTo=id) }
-    private fun upsert(m: ChatMessage) = mutable.update { s ->
-        s.copy(messages=(s.messages.filterNot { it.id==m.id }+m).sortedWith(compareBy<ChatMessage>{it.timestamp}.thenBy{it.id}))
+    fun refresh(){viewModelScope.launch{lock.withLock{idle=0;syncLocked()}}}
+    fun dismissError()=mutable.update{it.copy(error=null)}
+    fun draft(value:String)=mutable.update{it.copy(draft=value.take(16000))}
+    fun search(value:String)=mutable.update{it.copy(query=value)}
+    fun theme(currentDark:Boolean){prefs.edit().putBoolean("dark",!currentDark).apply();mutable.update{it.copy(dark=!currentDark)}}
+    fun reply(id:String?)=mutable.update{it.copy(replyTo=id)}
+    private suspend fun upsert(m:ChatMessage){
+        withContext(Dispatchers.IO){cache.put(m)}
+        mutable.update{s->s.copy(messages=(s.messages.filterNot{it.id==m.id}+m).sortedWith(compareBy<ChatMessage>{it.timestamp}.thenBy{it.id}))}
     }
-    fun send() {
+    fun send(){
         val s=mutable.value
-        if(s.busy || s.draft.isBlank() || session==null) return
-        val p=pending?.takeIf { it.text==s.draft && it.reply==s.replyTo } ?: Pending(UUID.randomUUID().toString(),s.draft,s.replyTo)
-        pending=p;mutable.update { it.copy(busy=true,error=null) }
-        viewModelScope.launch {
-            lock.withLock {
-                try {
-                    val current=session ?: return@withLock
-                    upsert(api.send(current,p.id,p.text,p.reply))
-                    pending=null
-                    mutable.update { it.copy(draft=if(it.draft==p.text) "" else it.draft,replyTo=if(it.replyTo==p.reply) null else it.replyTo,connection="متصل · همگام‌سازی فعال") }
-                } catch(e: Exception) { handle(e) }
-                finally { mutable.update { it.copy(busy=false) } }
+        if(s.busy||s.draft.isBlank()||session==null)return
+        val m=ChatMessage(text=s.draft,replyTo=s.replyTo,status=MessageStatus.QUEUED)
+        mutable.update{it.copy(busy=true,error=null)}
+        viewModelScope.launch{
+            lock.withLock{
+                try{
+                    if(session==null)return@withLock
+                    upsert(m)
+                    mutable.update{it.copy(draft=if(it.draft==m.text)"" else it.draft,replyTo=if(it.replyTo==m.replyTo)null else it.replyTo,busy=false)}
+                    idle=0
+                    BackgroundSchedule.send(getApplication<Application>())
+                    syncLocked()
+                }catch(e:Exception){if(e is CancellationException)throw e;report("ذخیره پیام انجام نشد.")}
+                finally{mutable.update{it.copy(busy=false)}}
             }
         }
+    }
+    fun retry(id:String){
+        if(mutable.value.busy)return
+        viewModelScope.launch{lock.withLock{
+            val m=mutable.value.messages.find{it.id==id&&it.status==MessageStatus.FAILED}?:return@withLock
+            try{upsert(m.copy(status=MessageStatus.QUEUED));idle=0;syncLocked()}
+            catch(e:Exception){if(e is CancellationException)throw e;report("تلاش مجدد انجام نشد.")}
+        }}
     }
     fun report(message:String) = mutable.update { it.copy(error=message) }
     private fun progress(p:Float?) = mutable.update { it.copy(progress=p) }
@@ -235,7 +271,12 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
             lock.withLock {
                 try {
                     val s=session ?: return@withLock
-                    api.delete(s,id)
+                    val local=mutable.value.messages.find{it.id==id}
+                    if(local?.status==MessageStatus.QUEUED||local?.status==MessageStatus.FAILED){
+                        // A previous attempt may have reached the server; try deletion before dropping local state.
+                        try{api.delete(s,id)}catch(e:ApiException){if(e.status!=404)throw e}
+                    }else api.delete(s,id)
+                    withContext(Dispatchers.IO){cache.remove(id)}
                     mutable.update { it.copy(messages=it.messages.filterNot { m->m.id==id },replyTo=it.replyTo.takeUnless { r->r==id }) }
                 } catch(e: Exception) { handle(e) }
                 finally { mutable.update { it.copy(busy=false) } }

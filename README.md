@@ -1,3 +1,3 @@
-# پیام‌رسان من
+# پیام‌رسان من — 1.3.0
 
-Phase 5: Android and web media via private Cloudflare Workers KV, 20 MiB per file, 900 MB project quota, image previews, audio recording/playback, file download, foreground text sync. Eventual consistency may delay media retrieval. No credentials in source. Debug APK; physical-device and authenticated media tests still required.
+Phase 6: encrypted SQLite message payload cache, persisted text outbox with stable UUID and automatic retry, WorkManager network-constrained background sync (15-minute minimum periodic interval, not real-time push), private notifications, adaptive foreground polling, persisted appearance, previous KV media features. Message IDs, timestamps and state are local database metadata; the payload is AES-GCM encrypted using Android Keystore. Attachments are not queued offline; server storage is not end-to-end encrypted. Debug APK signed by CI; device testing required. Existing deployment remains compatible. Free-tier quota shared with other projects. Build via GitHub Actions.

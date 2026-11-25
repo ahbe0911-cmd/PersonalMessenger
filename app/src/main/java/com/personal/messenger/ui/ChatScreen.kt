@@ -48,7 +48,7 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
         val target=saveTarget;saveTarget=null
         if(uri!=null&&target!=null)vm.saveMedia(target,uri)
     }
-    val visible = state.filtered
+    val visible = remember(state.messages,state.query){state.filtered}
     LaunchedEffect(visible.lastOrNull()?.id) {
         if (visible.isNotEmpty()) list.animateScrollToItem(visible.lastIndex)
     }
@@ -113,13 +113,14 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
                                         Text(iranTime(m.timestamp,"HH:mm"),style=MaterialTheme.typography.labelSmall,color=colors.onSurfaceVariant)
                                         if(m.outgoing) {
                                             Spacer(Modifier.width(6.dp))
-                                            Text(if(m.status==MessageStatus.SENT) "✓" else "✓✓",
+                                            Text(when(m.status){MessageStatus.QUEUED->"◷";MessageStatus.FAILED->"!";MessageStatus.SENT->"✓";else->"✓✓"},
                                                 color=if(m.status==MessageStatus.READ) Color(0xFF29A6D8) else colors.onSurfaceVariant)
                                         }
                                     }
                                     Row {
-                                        TextButton(onClick={vm.reply(m.id)},contentPadding=PaddingValues(horizontal=7.dp)) {Text("پاسخ",style=MaterialTheme.typography.labelSmall)}
+                                        if(m.status!=MessageStatus.QUEUED&&m.status!=MessageStatus.FAILED) TextButton(onClick={vm.reply(m.id)},contentPadding=PaddingValues(horizontal=7.dp)) {Text("پاسخ",style=MaterialTheme.typography.labelSmall)}
                                         TextButton(onClick={clipboard.setText(AnnotatedString(m.text))},contentPadding=PaddingValues(horizontal=7.dp)) {Text("کپی",style=MaterialTheme.typography.labelSmall)}
+                                        if(m.status==MessageStatus.FAILED) TextButton(onClick={vm.retry(m.id)},contentPadding=PaddingValues(horizontal=7.dp)){Text("تلاش مجدد",style=MaterialTheme.typography.labelSmall)}
                                         if(m.outgoing) TextButton(onClick={pendingDelete=m.id},contentPadding=PaddingValues(horizontal=7.dp)) {Text("حذف",style=MaterialTheme.typography.labelSmall)}
                                     }
                                 }
@@ -136,6 +137,7 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
                             TextButton(onClick={vm.reply(null)}){Text("لغو")}
                         }
                     }
+                    if(state.messages.any{it.status==MessageStatus.QUEUED})Text("پیام‌های در انتظار ارسال پس از اتصال ارسال می‌شوند.",style=MaterialTheme.typography.labelSmall,color=colors.onSurfaceVariant)
                     if(state.progress!=null) LinearProgressIndicator(progress={state.progress.coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp))
                     Row(verticalAlignment=Alignment.CenterVertically){
                         TextButton(enabled=!state.busy,onClick={picker.launch("*/*")}){Text("＋ پیوست")}
