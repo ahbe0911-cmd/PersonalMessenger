@@ -35,6 +35,8 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
     val clipboard = LocalClipboardManager.current
     var searching by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<String?>(null) }
+    var menu by remember { mutableStateOf(false) }
+    LaunchedEffect(state.error) { state.error?.let { snackbar.showSnackbar(it); vm.dismissError() } }
     val visible = state.filtered
     LaunchedEffect(visible.lastOrNull()?.id) {
         if (visible.isNotEmpty()) list.animateScrollToItem(visible.lastIndex)
@@ -50,10 +52,10 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text("گفتگوی شخصی", style=MaterialTheme.typography.titleMedium, fontWeight=FontWeight.Bold)
-                        Text("نسخه آزمایشی محلی", style=MaterialTheme.typography.bodySmall, color=colors.onSurfaceVariant)
+                        Text(state.connection, style=MaterialTheme.typography.bodySmall, color=colors.onSurfaceVariant)
                     }
                     TextButton(onClick={ searching=!searching; if(!searching) vm.search("") }) { Text("جستجو") }
-                    IconButton(onClick={vm.theme(dark)}) { Text(if(dark) "☀" else "◐", style=MaterialTheme.typography.headlineSmall) }
+                    Box { IconButton(onClick={menu=true}) { Text("⋮",style=MaterialTheme.typography.headlineSmall) }; DropdownMenu(expanded=menu,onDismissRequest={menu=false}) { DropdownMenuItem(text={Text("همگام‌سازی")},onClick={menu=false;vm.refresh()}); DropdownMenuItem(text={Text(if(dark) "حالت روشن" else "حالت تاریک")},onClick={menu=false;vm.theme(dark)}); DropdownMenuItem(text={Text("خروج از دستگاه")},enabled=!state.busy,onClick={menu=false;vm.logout()}) } }
                 }
             }
             if(searching) OutlinedTextField(value=state.query, onValueChange=vm::search,
@@ -65,7 +67,7 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
                         Spacer(Modifier.height(12.dp))
                         Text(if(state.query.isNotBlank()) "پیامی پیدا نشد" else "فضای شخصی شما", fontWeight=FontWeight.Bold,
                             style=MaterialTheme.typography.titleLarge)
-                        Text(if(state.query.isNotBlank()) "عبارت دیگری را امتحان کنید." else "پیام آزمایشی خود را بنویسید. اتصال سرور در فاز بعد اضافه می‌شود.",
+                        Text(if(state.query.isNotBlank()) "عبارت دیگری را امتحان کنید." else "پیام‌های خود را بین گوشی و کامپیوتر همگام کنید.",
                             textAlign=TextAlign.Center, color=colors.onSurfaceVariant, modifier=Modifier.padding(top=8.dp))
                     }
                 } else LazyColumn(state=list, modifier=Modifier.fillMaxSize(), contentPadding=PaddingValues(12.dp),
@@ -101,7 +103,7 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
                                     Row {
                                         TextButton(onClick={vm.reply(m.id)},contentPadding=PaddingValues(horizontal=7.dp)) {Text("پاسخ",style=MaterialTheme.typography.labelSmall)}
                                         TextButton(onClick={clipboard.setText(AnnotatedString(m.text))},contentPadding=PaddingValues(horizontal=7.dp)) {Text("کپی",style=MaterialTheme.typography.labelSmall)}
-                                        TextButton(onClick={pendingDelete=m.id},contentPadding=PaddingValues(horizontal=7.dp)) {Text("حذف",style=MaterialTheme.typography.labelSmall)}
+                                        if(m.outgoing) TextButton(onClick={pendingDelete=m.id},contentPadding=PaddingValues(horizontal=7.dp)) {Text("حذف",style=MaterialTheme.typography.labelSmall)}
                                     }
                                 }
                             }
@@ -121,7 +123,7 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
                         OutlinedTextField(value=state.draft,onValueChange=vm::draft,modifier=Modifier.weight(1f),
                             placeholder={Text("پیام خود را بنویسید…")},shape=RoundedCornerShape(24.dp),maxLines=5)
                         Spacer(Modifier.width(8.dp))
-                        FilledIconButton(onClick=vm::send,enabled=state.draft.isNotBlank(),modifier=Modifier.size(52.dp)) {
+                        FilledIconButton(onClick=vm::send,enabled=state.draft.isNotBlank() && !state.busy,modifier=Modifier.size(52.dp)) {
                             Text("➤",style=MaterialTheme.typography.titleLarge)
                         }
                     }
@@ -130,7 +132,7 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
         }
     }
     pendingDelete?.let { id ->
-        AlertDialog(onDismissRequest={pendingDelete=null},title={Text("حذف پیام")},text={Text("این پیام آزمایشی حذف شود؟")},
+        AlertDialog(onDismissRequest={pendingDelete=null},title={Text("حذف پیام")},text={Text("این پیام از گفتگو حذف شود؟")},
             confirmButton={TextButton(onClick={vm.delete(id);pendingDelete=null}){Text("حذف")}},
             dismissButton={TextButton(onClick={pendingDelete=null}){Text("انصراف")}})
     }

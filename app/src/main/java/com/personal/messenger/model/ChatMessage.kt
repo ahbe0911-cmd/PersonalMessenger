@@ -16,7 +16,12 @@ data class ChatState(
     val draft: String = "",
     val query: String = "",
     val replyTo: String? = null,
-    val dark: Boolean? = null
+    val dark: Boolean? = null,
+    val initializing: Boolean = true,
+    val deviceName: String? = null,
+    val connection: String = "",
+    val busy: Boolean = false,
+    val error: String? = null
 ) {
     val filtered: List<ChatMessage> get() = messages.filter {
         normalize(it.text).contains(normalize(query.trim()))
