@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.PersonalMessenger" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#008069</item>
+        <item name="android:navigationBarColor">#F0F2F5</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowBackground">#008069</item>
+    </style>
+</resources>

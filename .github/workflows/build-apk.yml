@@ -1,0 +1,36 @@
+name: Build Android APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Build and test
+        run: gradle --no-daemon :app:testDebugUnitTest :app:assembleDebug
+      - name: Prepare APK
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/PersonalMessenger-v1.0.0-debug.apk
+          sha256sum dist/PersonalMessenger-v1.0.0-debug.apk > dist/SHA256SUMS.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/PersonalMessenger-v1.0.0-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PersonalMessenger-APK
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
