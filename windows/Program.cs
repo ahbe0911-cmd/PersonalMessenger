@@ -34,10 +34,13 @@ internal sealed class MessengerWindow : Form
     public MessengerWindow()
     {
         Text = "پیام‌رسان من";
-        StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(520, 480);
-        Size = new Size(1200, 800);
-        WindowState = FormWindowState.Maximized;
+        StartPosition = FormStartPosition.Manual;
+        MinimumSize = new Size(340, 400);
+        WindowState = FormWindowState.Normal;
+        var work = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1920, 1080);
+        var width = Math.Min(work.Width, Math.Max(340, (int)Math.Round(work.Width * 0.35)));
+        Bounds = new Rectangle(work.Right - width, work.Top, width, work.Height);
+
         appIcon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         if (appIcon != null) Icon = appIcon;
         Controls.Add(web);

@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>PersonalMessenger</AssemblyName>
     <RootNamespace>PersonalMessenger</RootNamespace>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <ApplicationIcon>Assets\Messenger.ico</ApplicationIcon>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>

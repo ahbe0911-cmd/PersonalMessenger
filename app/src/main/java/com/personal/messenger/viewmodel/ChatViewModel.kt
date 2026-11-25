@@ -278,7 +278,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                     }else api.delete(s,id)
                     withContext(Dispatchers.IO){cache.remove(id)}
                     mutable.update { it.copy(messages=it.messages.filterNot { m->m.id==id },replyTo=it.replyTo.takeUnless { r->r==id }) }
-                } catch(e: Exception) { handle(e) }
+                } catch(e: Exception) { handle(e); if(e !is CancellationException && session!=null) report("حذف پیام انجام نشد؛ اتصال را بررسی کنید.") }
                 finally { mutable.update { it.copy(busy=false) } }
             }
         }

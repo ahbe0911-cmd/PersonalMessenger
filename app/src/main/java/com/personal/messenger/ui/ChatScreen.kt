@@ -173,8 +173,8 @@ fun ChatScreen(state:ChatState,vm:ChatViewModel,dark:Boolean){
         }
     }
     pendingDelete?.let{id->
-        AlertDialog(onDismissRequest={pendingDelete=null},title={Text("حذف پیام")},text={Text("این پیام از گفتگو حذف شود؟")},
-            confirmButton={TextButton(onClick={vm.delete(id);pendingDelete=null}){Text("حذف")}},dismissButton={TextButton(onClick={pendingDelete=null}){Text("انصراف")}})
+        AlertDialog(onDismissRequest={pendingDelete=null},title={Text("حذف پیام")},text={Text("این پیام برای همه دستگاه‌های متصل حذف شود؟")},
+            confirmButton={TextButton(onClick={vm.delete(id);pendingDelete=null}){Text("حذف برای همه")}},dismissButton={TextButton(onClick={pendingDelete=null}){Text("انصراف")}})
     }
 }
 
@@ -226,7 +226,7 @@ private fun MessageBubble(m:ChatMessage,parent:ChatMessage?,dark:Boolean,busy:Bo
                             if(m.status!=MessageStatus.QUEUED&&m.status!=MessageStatus.FAILED)DropdownMenuItem(text={Text("پاسخ")},leadingIcon={Icon(Icons.Default.Reply,null)},onClick={actions=false;onReply()})
                             DropdownMenuItem(text={Text("کپی")},leadingIcon={Icon(Icons.Default.ContentCopy,null)},onClick={actions=false;onCopy()})
                             if(m.status==MessageStatus.FAILED)DropdownMenuItem(text={Text("تلاش مجدد")},leadingIcon={Icon(Icons.Default.Refresh,null)},onClick={actions=false;onRetry()})
-                            if(m.outgoing)DropdownMenuItem(text={Text("حذف")},leadingIcon={Icon(Icons.Default.DeleteOutline,null)},onClick={actions=false;onDelete()})
+                            DropdownMenuItem(text={Text("حذف برای همه")},leadingIcon={Icon(Icons.Default.DeleteOutline,null)},onClick={actions=false;onDelete()})
                         }
                     }
                 }
