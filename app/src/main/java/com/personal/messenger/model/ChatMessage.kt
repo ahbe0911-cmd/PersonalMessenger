@@ -9,7 +9,9 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis(),
     val outgoing: Boolean = true,
     val status: MessageStatus = MessageStatus.SENT,
-    val replyTo: String? = null
+    val replyTo: String? = null,
+    val kind: String = "text",
+    val attachmentId: String? = null
 )
 data class ChatState(
     val messages: List<ChatMessage> = emptyList(),
@@ -21,7 +23,8 @@ data class ChatState(
     val deviceName: String? = null,
     val connection: String = "",
     val busy: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val progress: Float? = null
 ) {
     val filtered: List<ChatMessage> get() = messages.filter {
         normalize(it.text).contains(normalize(query.trim()))

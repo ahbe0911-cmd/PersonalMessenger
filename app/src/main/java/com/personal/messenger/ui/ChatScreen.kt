@@ -21,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import com.personal.messenger.model.*
 import com.personal.messenger.viewmodel.ChatViewModel
 import java.util.Date
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 
 private fun iranTime(ms: Long, pattern: String): String =
     SimpleDateFormat(pattern, ULocale("fa_IR@calendar=persian")).apply {
@@ -37,6 +40,14 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
     var pendingDelete by remember { mutableStateOf<String?>(null) }
     var menu by remember { mutableStateOf(false) }
     LaunchedEffect(state.error) { state.error?.let { snackbar.showSnackbar(it); vm.dismissError() } }
+    val context=LocalContext.current
+    var saveTarget by remember { mutableStateOf<ChatMessage?>(null) }
+    var preview by remember { mutableStateOf<MediaPreview?>(null) }
+    val picker=rememberLauncherForActivityResult(ActivityResultContracts.GetContent()){uri->uri?.let(vm::attach)}
+    val saver=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")){uri->
+        val target=saveTarget;saveTarget=null
+        if(uri!=null&&target!=null)vm.saveMedia(target,uri)
+    }
     val visible = state.filtered
     LaunchedEffect(visible.lastOrNull()?.id) {
         if (visible.isNotEmpty()) list.animateScrollToItem(visible.lastIndex)
@@ -92,6 +103,12 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
                                         HorizontalDivider(Modifier.padding(vertical=4.dp))
                                     }
                                     Text(m.text,style=MaterialTheme.typography.bodyLarge,color=colors.onSurface)
+                                    if(m.attachmentId!=null){
+                                        Row(horizontalArrangement=Arrangement.spacedBy(3.dp)){
+                                            if(m.kind!="file")TextButton(enabled=!state.busy,onClick={vm.openMedia(m){f,mime->preview?.file?.delete();preview=MediaPreview(f,mime,m.text)}}){Text(if(m.kind=="image")"نمایش" else "پخش")}
+                                            TextButton(enabled=!state.busy,onClick={saveTarget=m;saver.launch(m.text.replace('/','_').take(150).ifBlank{"attachment"})}){Text("ذخیره")}
+                                        }
+                                    }
                                     Row(Modifier.align(Alignment.End),verticalAlignment=Alignment.CenterVertically) {
                                         Text(iranTime(m.timestamp,"HH:mm"),style=MaterialTheme.typography.labelSmall,color=colors.onSurfaceVariant)
                                         if(m.outgoing) {
@@ -119,6 +136,11 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
                             TextButton(onClick={vm.reply(null)}){Text("لغو")}
                         }
                     }
+                    if(state.progress!=null) LinearProgressIndicator(progress={state.progress.coerceIn(0f,1f)},modifier=Modifier.fillMaxWidth().padding(vertical=4.dp))
+                    Row(verticalAlignment=Alignment.CenterVertically){
+                        TextButton(enabled=!state.busy,onClick={picker.launch("*/*")}){Text("＋ پیوست")}
+                        VoiceRecorderButton(enabled=!state.busy,onRecorded=vm::sendVoice,onError=vm::report)
+                    }
                     Row(verticalAlignment=Alignment.Bottom) {
                         OutlinedTextField(value=state.draft,onValueChange=vm::draft,modifier=Modifier.weight(1f),
                             placeholder={Text("پیام خود را بنویسید…")},shape=RoundedCornerShape(24.dp),maxLines=5)
@@ -131,6 +153,7 @@ fun ChatScreen(state: ChatState, vm: ChatViewModel, dark: Boolean) {
             }
         }
     }
+    preview?.let { p -> MediaPreviewDialog(p){p.file.delete();preview=null} }
     pendingDelete?.let { id ->
         AlertDialog(onDismissRequest={pendingDelete=null},title={Text("حذف پیام")},text={Text("این پیام از گفتگو حذف شود؟")},
             confirmButton={TextButton(onClick={vm.delete(id);pendingDelete=null}){Text("حذف")}},

@@ -1,3 +1,3 @@
 # پیام‌رسان من
 
-Phase 4: Android native client with private device enrollment, Android Keystore encrypted session, HTTPS API, foreground cursor polling, text sending, replies, search, deletion and read receipts. No enrollment secret in source. Media and offline Room cache are later phases. Build with JDK 17, Gradle 8.9 and Android SDK 35. CI builds a debug-signed APK, runs unit tests and checks backend health. Physical-device and authenticated end-to-end testing are required separately.
+Phase 5: Android and web media via private Cloudflare Workers KV, 20 MiB per file, 900 MB project quota, image previews, audio recording/playback, file download, foreground text sync. Eventual consistency may delay media retrieval. No credentials in source. Debug APK; physical-device and authenticated media tests still required.
