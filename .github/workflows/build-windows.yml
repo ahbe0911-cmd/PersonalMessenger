@@ -1,0 +1,59 @@
+name: Build Windows EXE
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'windows/**'
+      - '.github/workflows/build-windows.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Generate multi-resolution icon
+        shell: powershell
+        run: .\windows\Assets\CreateIcon.ps1
+      - name: Publish self-contained x64 executable
+        shell: pwsh
+        run: dotnet publish windows/PersonalMessenger.csproj -c Release -r win-x64 --self-contained true -o windows/publish
+      - name: Download official WebView2 bootstrapper
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "windows/MicrosoftEdgeWebview2Setup.exe"
+          $sig = Get-AuthenticodeSignature "windows/MicrosoftEdgeWebview2Setup.exe"
+          if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'Microsoft') { throw "Invalid Microsoft bootstrapper signature" }
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $iscc = Join-Path "$([Environment]::GetFolderPath('ProgramFilesX86'))" 'Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "Inno Setup install failed" }
+          }
+          & $iscc windows/Setup.iss
+          if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed" }
+          if (!(Test-Path dist-windows/PersonalMessenger-Windows-x64-Setup.exe)) { throw "Missing installer" }
+      - name: Check backend
+        shell: pwsh
+        run: |
+          $h = Invoke-RestMethod 'https://personal-messenger-web.ahbe0911.workers.dev/health'
+          if (!$h.ok -or !$h.backend.ok) { throw "Web endpoint unavailable" }
+      - name: Hash installer
+        shell: pwsh
+        run: |
+          $file = 'dist-windows/PersonalMessenger-Windows-x64-Setup.exe'
+          $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLower()
+          "$hash  PersonalMessenger-Windows-x64-Setup.exe" | Out-File dist-windows/SHA256SUMS.txt -Encoding ascii
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PersonalMessenger-Windows-Setup
+          path: dist-windows/
+          if-no-files-found: error
+          retention-days: 14
