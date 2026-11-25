@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -35,7 +37,7 @@ val fetchFonts by tasks.registering {
             "fonts/ttf/Vazirmatn-Bold.ttf" to fontDir.resolve("vazirmatn_bold.ttf"),
             "OFL.txt" to assets.resolve("Vazirmatn-OFL.txt")
         ).forEach { (path, dest) ->
-            val connection = java.net.URI.create(base + path).toURL().openConnection()
+            val connection = URI.create(base + path).toURL().openConnection()
             connection.connectTimeout = 20000
             connection.readTimeout = 30000
             connection.getInputStream().use { input -> dest.outputStream().use { input.copyTo(it) } }
