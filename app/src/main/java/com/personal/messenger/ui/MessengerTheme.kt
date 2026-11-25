@@ -8,7 +8,7 @@ import androidx.compose.ui.text.font.*
 import com.personal.messenger.R
 
 private val light = lightColorScheme(primary=Color(0xFF008069), onPrimary=Color.White,
-    background=Color(0xFFEFEAE2), surface=Color(0xFFF0F2F5), onSurface=Color(0xFF142D28),
+    background=Color(0xFFEFEAE2), surface=Color.White, onSurface=Color(0xFF182622),
     surfaceVariant=Color.White, onSurfaceVariant=Color(0xFF5F716D))
 private val dark = darkColorScheme(primary=Color(0xFF53C8A5), onPrimary=Color(0xFF00382D),
     background=Color(0xFF0B141A), surface=Color(0xFF202C33), onSurface=Color(0xFFE8F0EF),
@@ -21,7 +21,7 @@ fun MessengerTheme(darkMode: Boolean? = null, content: @Composable () -> Unit) {
         displayLarge=t.displayLarge.copy(fontFamily=family), displayMedium=t.displayMedium.copy(fontFamily=family),
         displaySmall=t.displaySmall.copy(fontFamily=family), headlineLarge=t.headlineLarge.copy(fontFamily=family),
         headlineMedium=t.headlineMedium.copy(fontFamily=family), headlineSmall=t.headlineSmall.copy(fontFamily=family),
-        titleLarge=t.titleLarge.copy(fontFamily=family), titleMedium=t.titleMedium.copy(fontFamily=family),
+        titleLarge=t.titleLarge.copy(fontFamily=family), titleMedium=t.titleMedium.copy(fontFamily=family,fontWeight=FontWeight.Bold),
         titleSmall=t.titleSmall.copy(fontFamily=family), bodyLarge=t.bodyLarge.copy(fontFamily=family),
         bodyMedium=t.bodyMedium.copy(fontFamily=family), bodySmall=t.bodySmall.copy(fontFamily=family),
         labelLarge=t.labelLarge.copy(fontFamily=family), labelMedium=t.labelMedium.copy(fontFamily=family),

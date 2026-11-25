@@ -1,6 +1,9 @@
 package com.personal.messenger.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.personal.messenger.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,14 +25,12 @@ fun LoginScreen(state: ChatState, vm: ChatViewModel) {
     var name by remember { mutableStateOf("گوشی اندروید") }
     var secret by remember { mutableStateOf("") }
     Scaffold(containerColor=MaterialTheme.colorScheme.background,contentWindowInsets=WindowInsets.safeDrawing) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding).imePadding().padding(20.dp),contentAlignment=Alignment.Center) {
+        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).padding(20.dp),contentAlignment=Alignment.Center) {
             if(state.initializing) CircularProgressIndicator()
             else Card(shape=RoundedCornerShape(22.dp),modifier=Modifier.widthIn(max=440.dp).fillMaxWidth()) {
                 Column(Modifier.verticalScroll(rememberScrollState()).padding(24.dp),
                     horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(14.dp)) {
-                    Box(Modifier.size(68.dp).background(Color(0xFF008069),CircleShape),contentAlignment=Alignment.Center) {
-                        Text("م",color=Color.White,style=MaterialTheme.typography.headlineLarge)
-                    }
+                    Image(painterResource(R.drawable.ic_launcher_foreground),contentDescription="پیام‌رسان من",modifier=Modifier.size(100.dp))
                     Text("پیام‌رسان من",style=MaterialTheme.typography.headlineSmall)
                     Text("برای همگام‌سازی با کامپیوتر، کلید ثبت دستگاه خود را وارد کنید.",textAlign=TextAlign.Center)
                     OutlinedTextField(name,{name=it.take(80)},label={Text("نام دستگاه")},singleLine=true,

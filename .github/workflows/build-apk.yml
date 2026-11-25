@@ -35,9 +35,9 @@ jobs:
       - name: Prepare APK
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/PersonalMessenger-v1.3.0-debug.apk
-          sha256sum dist/PersonalMessenger-v1.3.0-debug.apk > dist/SHA256SUMS.txt
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/PersonalMessenger-v1.3.0-debug.apk
+          cp app/build/outputs/apk/debug/app-debug.apk dist/PersonalMessenger-v1.4.0-debug.apk
+          sha256sum dist/PersonalMessenger-v1.4.0-debug.apk > dist/SHA256SUMS.txt
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/PersonalMessenger-v1.4.0-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: PersonalMessenger-APK
