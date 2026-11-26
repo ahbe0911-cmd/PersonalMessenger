@@ -30,3 +30,6 @@ dialog{border:0;border-radius:17px;width:min(92vw,420px);max-width:100%;max-heig
 
 /* 2.5 accessibility and composer polish */
 .bubble-text{unicode-bidi:plaintext;white-space:pre-wrap;overflow-wrap:anywhere;display:block}.upload-status{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff;border-top:1px solid var(--line);font-size:.82rem}.upload-status[hidden]{display:none}.upload-status progress{flex:1;min-width:0;accent-color:var(--accent)}.bubble-menu summary,.bubble footer button{min-width:44px;min-height:44px;display:grid;place-items:center}.media-open{min-height:44px}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* 2.5 phase 2: accessible connection status. */
+#connection-status{flex:none;padding:5px 12px;text-align:center;font-size:.78rem;line-height:1.45;background:#fff4d9;color:#694800;overflow-wrap:anywhere}#connection-status[hidden]{display:none}

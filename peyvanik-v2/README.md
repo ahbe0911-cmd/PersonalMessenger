@@ -40,3 +40,6 @@ Chat and My Cloud hide an item immediately after confirmation, preserve server-s
 
 ## 2.5 — review phase 1 (compatible changes)
 Incremental message DOM, serialized sync, visibility-aware chat polling, no redundant key-account device polls, conditional public static cache with ETags, Persian local message search, upload progress/cancel, accessible composer, Android audio MIME chooser, Windows single-instance and explicit autofill preferences. Existing API, storage and account keys unchanged. Signing continuity, invitations/rate policy, Cron, R2, E2EE and groups are not part of this phase. Debug APK remains debug until signing continuity is planned.
+
+## 2.5 — review phase 2 (client reliability)
+Isolated in-memory drafts per conversation (cleared on logout; not persisted), per-conversation retry IDs, guarded asynchronous conversation refresh, foreground conversation-list polling with bounded error backoff, offline/reconnect status, and regression tests for draft isolation and connection state. Bundled web assets are checked against their editable sources by an automated test. No server API, database, access keys, native IDs, signing, or storage quota changes. Deploy the updated web Worker only after CI passes; verify real clients separately.
