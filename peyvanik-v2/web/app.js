@@ -22,14 +22,24 @@ const mb=n=>(n/1048576).toLocaleString('fa-IR',{maximumFractionDigits:2})+' مگ
 function clock(){const n=new Date();$('date').textContent=new Intl.DateTimeFormat('fa-IR',{dateStyle:'full',timeZone:'Asia/Tehran'}).format(n);$('time').textContent=new Intl.DateTimeFormat('fa-IR',{timeStyle:'medium',timeZone:'Asia/Tehran'}).format(n)}
 clock();setInterval(clock,1000);
 
-let pendingAccount=null;
+let pendingAccount=null,loginEnabled=false,loginMode='login';
+function showLoginMode(mode){
+ loginMode=mode;const active=loginEnabled&&!pendingAccount;
+ $('login-tabs').hidden=!active;$('device-label').hidden=!active;
+ $('key-login').hidden=!active||mode!=='login';$('key-register').hidden=!active||mode!=='register';
+ $('login-tab').setAttribute('aria-pressed',String(mode==='login'));$('register-tab').setAttribute('aria-pressed',String(mode==='register'));
+ $('login-status').textContent=active?(mode==='login'?'با کلید اختصاصی وارد حساب شوید.':'حساب مستقل خود را ایجاد کنید.'):$('login-status').textContent;
+}
+$('login-tab').onclick=()=>showLoginMode('login');$('register-tab').onclick=()=>showLoginMode('register');
 async function initLogin(){
- $('login-status').textContent='در حال بررسی وضعیت ورود…';$('key-login').hidden=true;$('key-register').hidden=true;$('new-key-panel').hidden=true;
- try{const c=await api('/v2/auth/key-config');$('login-status').textContent=c.enabled?'با کلید اختصاصی وارد شوید یا حساب جدید بسازید.':'ثبت‌نام و ورود هنوز فعال نیست.';$('key-login').hidden=!c.enabled;$('key-register').hidden=!c.enabled}catch(e){$('login-status').textContent='اتصال برقرار نشد.'}
+ pendingAccount=null;loginEnabled=false;$('login-status').textContent='در حال بررسی وضعیت ورود…';$('new-key-panel').hidden=true;showLoginMode('login');
+ const ua=navigator.userAgent;
+ $('device').value=ua.includes('PeyvanikAndroid/')?'اندروید':ua.includes('Windows')?'ویندوز':'مرورگر';
+ try{const c=await api('/v2/auth/key-config');loginEnabled=c.enabled;$('login-status').textContent=c.enabled?'با کلید اختصاصی وارد حساب شوید.':'ثبت‌نام و ورود هنوز فعال نیست.';showLoginMode('login')}catch(e){$('login-status').textContent='اتصال برقرار نشد.'}
 }
 form('key-login',async()=>{const r=await api('/v2/auth/key-login','POST',{key:$('access-key').value.trim(),device_name:$('device').value.trim()||'مرورگر'});$('access-key').value='';await enter(r.account)});
-form('key-register',async()=>{const r=await api('/v2/auth/key-register','POST',{username:$('reg-username').value.trim(),display_name:$('reg-name').value.trim(),device_name:$('device').value.trim()||'مرورگر',accept_key_responsibility:$('accept-key').checked});pendingAccount=r.account;$('new-key').textContent=r.access_key;$('key-login').hidden=true;$('key-register').hidden=true;$('new-key-panel').hidden=false});
-$('copy-key').onclick=()=>run($('copy-key'),async()=>{await navigator.clipboard.writeText($('new-key').textContent);notify('کلید کپی شد')});
+form('key-register',async()=>{const r=await api('/v2/auth/key-register','POST',{username:$('reg-username').value.trim(),display_name:$('reg-name').value.trim(),device_name:$('device').value.trim()||'مرورگر',accept_key_responsibility:$('accept-key').checked});pendingAccount=r.account;$('new-key').textContent=r.access_key;showLoginMode('register');$('login-status').textContent='حساب شما ساخته شد.';$('new-key-panel').hidden=false});
+$('copy-key').onclick=()=>run($('copy-key'),async()=>{try{await navigator.clipboard.writeText($('new-key').textContent);notify('کلید کپی شد')}catch{const range=document.createRange();range.selectNodeContents($('new-key'));const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);notify('متن کلید انتخاب شد؛ آن را کپی کنید.')}});
 $('continue-key').onclick=()=>run($('continue-key'),async()=>{if(!pendingAccount)return;const a=pendingAccount;pendingAccount=null;$('new-key').textContent='';await enter(a)});
 async function enter(account){state.epoch++;state.account=account;$('login').hidden=true;$('shell').hidden=false;$('new-key-panel').hidden=true;await navigate('chat')}
 $('logout').onclick=()=>run($('logout'),async()=>{await api('/logout','POST',{});reset();await initLogin()});

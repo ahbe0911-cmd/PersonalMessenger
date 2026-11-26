@@ -27,9 +27,16 @@ public final class MainActivity extends Activity {
  private void toast(String s){Toast.makeText(this,s,Toast.LENGTH_LONG).show();}
  @Override public void onCreate(Bundle saved){
   super.onCreate(saved);getWindow().setStatusBarColor(Color.rgb(7,94,84));getWindow().setNavigationBarColor(Color.rgb(7,94,84));
-  web=new WebView(this);web.setBackgroundColor(Color.rgb(241,247,245));setContentView(web);
-  web.setOnApplyWindowInsetsListener((view,insets)->{if(android.os.Build.VERSION.SDK_INT>=30){android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.ime());view.setPadding(bars.left,bars.top,bars.right,bars.bottom);}return insets;});
-  WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);settings.setSupportMultipleWindows(false);settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setSaveFormData(false);settings.setUserAgentString(settings.getUserAgentString()+" PeyvanikAndroid/2.1");WebView.setWebContentsDebuggingEnabled(false);
+  FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.rgb(7,94,84));
+  web=new WebView(this);web.setBackgroundColor(Color.rgb(241,247,245));root.addView(web,new FrameLayout.LayoutParams(-1,-1));setContentView(root);
+  if(android.os.Build.VERSION.SDK_INT>=30){
+   getWindow().setDecorFitsSystemWindows(false);
+   android.view.WindowInsetsController controller=getWindow().getInsetsController();
+   if(controller!=null)controller.setSystemBarsAppearance(0,android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS|android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+   root.setOnApplyWindowInsetsListener((view,insets)->{android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout()|WindowInsets.Type.ime());view.setPadding(bars.left,bars.top,bars.right,bars.bottom);return WindowInsets.CONSUMED;});
+   root.requestApplyInsets();
+  }
+  WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);settings.setSupportMultipleWindows(false);settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setSaveFormData(false);settings.setUserAgentString(settings.getUserAgentString()+" PeyvanikAndroid/2.2");WebView.setWebContentsDebuggingEnabled(false);
   CookieManager.getInstance().setAcceptCookie(true);CookieManager.getInstance().setAcceptThirdPartyCookies(web,false);
   web.setWebViewClient(new WebViewClient(){
    @Override public boolean shouldOverrideUrlLoading(WebView w,WebResourceRequest r){Uri u=r.getUrl();if(!r.isForMainFrame())return !trusted(u);if(!trusted(u))return true;if("/native-download".equals(u.getPath())){download(u);return true;}return false;}

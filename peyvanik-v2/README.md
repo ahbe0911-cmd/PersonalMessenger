@@ -28,3 +28,6 @@ Dedicated web /keymaker and Windows native key issuer. Public signup policy unch
 
 ## 2.1 connected clients
 Android embedded system WebView and Windows WebView2 use production HTTPS origin, separate app identity, no external browser launcher or Google flow. Android file chooser and user-selected download destination, Windows right 35% dock and tray. Keymaker web only: standalone Windows keymaker sources and workflow removed from active branch. Debug-signed APK and unsigned Windows installer; device-level validation, native push/share, E2EE and release signing still pending.
+
+## Mobile layout 2.2
+Separate login/register tabs; shrinkable RTL grid, wrapped checkbox, responsive compact card and mobile system/IME insets on Android root. Shared web CSS updates existing connected apps without reinstall; native inset improvement needs updated APK. Physical device verification pending.
