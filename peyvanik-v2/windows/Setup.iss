@@ -1,7 +1,7 @@
 [Setup]
 AppId={{34B6E28A-985B-4B7D-ADE9-28D95D39F411}
 AppName=Peyvanik
-AppVersion=2.5.0-rc.1
+AppVersion=2.6.0
 AppPublisher=Peyvanik
 DefaultDirName={localappdata}\Programs\Peyvanik
 DefaultGroupName=Peyvanik
@@ -11,7 +11,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.19041
 SetupIconFile=Assets\Messenger.ico
 OutputDir=..\..\dist-peyvanik-win
-OutputBaseFilename=Peyvanik-v2.5-rc1-x64-Setup
+OutputBaseFilename=Peyvanik-v2.6-x64-Setup
 UninstallDisplayIcon={app}\Peyvanik.exe
 Compression=lzma2
 SolidCompression=yes

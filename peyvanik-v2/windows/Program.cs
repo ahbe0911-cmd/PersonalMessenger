@@ -8,12 +8,12 @@ static class Program {
 }
 sealed class MessengerWindow:Form{
  const string Origin="https://peyvanik-web.ahbe0911.workers.dev";
- readonly WebView2 web=new(){Dock=DockStyle.Fill,DefaultBackgroundColor=Color.FromArgb(241,247,245)};
+ readonly WebView2 web=new(){Dock=DockStyle.Fill,DefaultBackgroundColor=Color.FromArgb(240,244,246)};
  readonly Label status=new(){Dock=DockStyle.Top,Height=34,TextAlign=ContentAlignment.MiddleCenter,Text="در حال اتصال به پیونیک…"};
  readonly Button retry=new(){Dock=DockStyle.Top,Height=42,Text="تلاش مجدد",Visible=false};
  readonly NotifyIcon tray=new();bool exiting=false,starting=false;
  public MessengerWindow(){
-  Text="پیونیک | Peyvanik";MinimumSize=new Size(340,400);StartPosition=FormStartPosition.Manual;var area=Screen.PrimaryScreen?.WorkingArea??new Rectangle(0,0,1920,1080);int width=Math.Min(area.Width,Math.Max(340,(int)(area.Width*.35)));Bounds=new Rectangle(area.Right-width,area.Top,width,area.Height);
+  Text="پیونیک | Peyvanik";MinimumSize=new Size(680,480);StartPosition=FormStartPosition.CenterScreen;var area=Screen.PrimaryScreen?.WorkingArea??new Rectangle(0,0,1920,1080);Size=new Size(Math.Min(area.Width,1360),Math.Min(area.Height,900));WindowState=FormWindowState.Maximized;
   Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath)??SystemIcons.Application;Controls.Add(web);Controls.Add(retry);Controls.Add(status);
   var menu=new ContextMenuStrip{RightToLeft=RightToLeft.Yes};menu.Items.Add("باز کردن پیونیک",null,(_,_)=>Restore());menu.Items.Add("بارگذاری مجدد",null,async(_,_)=>await Connect());menu.Items.Add("خروج کامل",null,(_,_)=>{exiting=true;Close();});tray.Icon=Icon;tray.Text="پیونیک";tray.ContextMenuStrip=menu;tray.Visible=true;tray.DoubleClick+=(_,_)=>Restore();
   retry.Click+=async(_,_)=>await Connect();Shown+=async(_,_)=>await Connect();

@@ -1,4 +1,4 @@
-name: Build Peyvanik 2.5 RC1 connected apps
+name: Build Peyvanik 2.6 connected apps
 on:
   push:
     branches: [peyvanik-v2]
@@ -44,14 +44,14 @@ jobs:
           mkdir -p dist-peyvanik-android
           mapfile -t apks < <(find peyvanik-v2/android/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk')
           if [ "${#apks[@]}" -ne 1 ]; then exit 1; fi
-          cp "${apks[0]}" dist-peyvanik-android/Peyvanik-v2.5-rc1.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist-peyvanik-android/Peyvanik-v2.5-rc1.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist-peyvanik-android/Peyvanik-v2.5-rc1.apk > dist-peyvanik-android/SIGNING.txt
-          printf 'version=2.5.0-rc.1\ncommit=%s\nrun_id=%s\nsigning=debug\nweb_origin=https://peyvanik-web.ahbe0911.workers.dev\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > dist-peyvanik-android/BUILD-INFO.txt
+          cp "${apks[0]}" dist-peyvanik-android/Peyvanik-v2.6.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist-peyvanik-android/Peyvanik-v2.6.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist-peyvanik-android/Peyvanik-v2.6.apk > dist-peyvanik-android/SIGNING.txt
+          printf 'version=2.6.0\ncommit=%s\nrun_id=%s\nsigning=debug\nweb_origin=https://peyvanik-web.ahbe0911.workers.dev\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > dist-peyvanik-android/BUILD-INFO.txt
           cd dist-peyvanik-android && sha256sum *.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Peyvanik-Android-v2.5-RC1
+          name: Peyvanik-Android-v2.6
           path: dist-peyvanik-android/
           if-no-files-found: error
           retention-days: 14
@@ -84,14 +84,14 @@ jobs:
           }
           & $iscc peyvanik-v2/windows/Setup.iss
           if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed" }
-          $file = 'dist-peyvanik-win/Peyvanik-v2.5-rc1-x64-Setup.exe'
+          $file = 'dist-peyvanik-win/Peyvanik-v2.6-x64-Setup.exe'
           if (!(Test-Path $file)) { throw "Missing installer" }
           $hash=(Get-FileHash $file -Algorithm SHA256).Hash.ToLower()
-          "$hash  Peyvanik-v2.5-rc1-x64-Setup.exe" | Out-File dist-peyvanik-win/SHA256SUMS.txt -Encoding ascii
-          @("version=2.5.0-rc.1","commit=$env:GITHUB_SHA","run_id=$env:GITHUB_RUN_ID","signing=unsigned","web_origin=https://peyvanik-web.ahbe0911.workers.dev") | Out-File dist-peyvanik-win/BUILD-INFO.txt -Encoding ascii
+          "$hash  Peyvanik-v2.6-x64-Setup.exe" | Out-File dist-peyvanik-win/SHA256SUMS.txt -Encoding ascii
+          @("version=2.6.0","commit=$env:GITHUB_SHA","run_id=$env:GITHUB_RUN_ID","signing=unsigned","web_origin=https://peyvanik-web.ahbe0911.workers.dev") | Out-File dist-peyvanik-win/BUILD-INFO.txt -Encoding ascii
       - uses: actions/upload-artifact@v4
         with:
-          name: Peyvanik-Windows-v2.5-RC1
+          name: Peyvanik-Windows-v2.6
           path: dist-peyvanik-win/
           if-no-files-found: error
           retention-days: 14
