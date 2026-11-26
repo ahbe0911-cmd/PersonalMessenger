@@ -31,3 +31,6 @@ Android embedded system WebView and Windows WebView2 use production HTTPS origin
 
 ## Mobile layout 2.2
 Separate login/register tabs; shrinkable RTL grid, wrapped checkbox, responsive compact card and mobile system/IME insets on Android root. Shared web CSS updates existing connected apps without reinstall; native inset improvement needs updated APK. Physical device verification pending.
+
+## UI 2.3
+Mobile-first RTL layout, bundled Vazirmatn regular (OFL v1.1), bottom navigation, full-screen conversation, chat-style saved items, search and existing folder actions behind menu. API and server modules unchanged. Peer chat remains text-only; no fake delivery/read/presence. Voice icon in personal cloud opens existing audio file chooser (not recording); peer attachment/mic disabled with explanatory labels. Existing cloud requests/payloads retained; inline notes use existing POST notes. Physical-device validation pending.
