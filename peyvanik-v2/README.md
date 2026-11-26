@@ -19,3 +19,6 @@ Android and Windows **browser launchers**, not complete native clients, separate
 
 ## Operational staging
 Actual web Worker `peyvanik-web` uses private `peyvanik-v2-api` service binding and bundled assets. Preview remains separate. Database migrations 002–005 and API deployment performed independently. Registration remains gated until Google web client ID is configured and real sign-in verified. Encryption secret configured server-side, never in source. Desktop/mobile launcher remains a browser-based preview package; native client work remains pending. No migration of PersonalMessenger data.
+
+## Key access mode
+Separate high-entropy 256-bit account keys, generated server-side, hash only stored, one-time display. No Google, email or TOTP required for key accounts. Initial 100-account pilot cap, fixed-window abuse limits, existing session revocation. No self-service lost-key recovery; keep key safe. Google routes remain gated off. KEY_AUTH_OPEN controls registration/login. Never reuse legacy shared enrollment key.

@@ -1,6 +1,7 @@
 import {auth,security} from './auth.js';
 import {chat} from './chat.js';
 import {cloud} from './cloud.js';
+import {keyAuth,keySecurity} from './key-auth.js';
 
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'}});
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -23,10 +24,11 @@ async function handle(req,env){
  const u=new URL(req.url),p=u.pathname,m=req.method;
  if(m==='GET'&&p==='/health'){await env.DB.prepare('SELECT 1 AS ok').first();return json({ok:true,service:'peyvanik',stage:'cloud-preview',registration:'closed',cloud:'private-by-account'})}
  // Public account creation remains gated pending OAuth configuration and testing.
+ if(p.startsWith('/v2/auth/key-'))return keyAuth(req,env,{json,fail,body});
  if(p.startsWith('/v2/auth/'))return auth(req,env);
  const s=await session(req,env),owner=s.account_id,db=env.DB;
- if(p==='/v2/security'||p.startsWith('/v2/security/'))return security(req,env,s);
- if(p==='/v2/me'&&m==='GET')return json({account:await db.prepare('SELECT id,email,username,display_name,created_at FROM accounts WHERE id=?').bind(owner).first()});
+ if(p==='/v2/security'||p.startsWith('/v2/security/'))return await keySecurity(req,env,s,{json,fail,body})||security(req,env,s);
+ if(p==='/v2/me'&&m==='GET')return json({account:await db.prepare('SELECT id,CASE WHEN email LIKE '%@key.invalid' THEN NULL ELSE email END AS email,username,display_name,created_at FROM accounts WHERE id=?').bind(owner).first()});
  if(p==='/v2/sessions'&&m==='GET'){const r=await db.prepare('SELECT id,device_name,created_at,last_seen_at,expires_at FROM sessions WHERE account_id=? AND revoked_at IS NULL AND expires_at>? ORDER BY last_seen_at DESC').bind(owner,Date.now()).all();return json({sessions:r.results,current:s.session_id})}
  let match=/^\/v2\/sessions\/([0-9a-f-]{36})$/i.exec(p);
  if(match&&uuid.test(match[1])&&m==='DELETE'){const r=await db.prepare('UPDATE sessions SET revoked_at=? WHERE id=? AND account_id=? AND revoked_at IS NULL').bind(Date.now(),match[1],owner).run();if(!r.meta.changes)fail(404,'NOT_FOUND');return json({ok:true})}
