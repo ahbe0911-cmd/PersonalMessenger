@@ -29,7 +29,9 @@ jobs:
       - run: gradle --no-daemon :peyvanik-preview:assembleDebug
       - run: |
           mkdir -p dist-peyvanik-android
-          cp peyvanik-v2/android/build/outputs/apk/debug/android-debug.apk dist-peyvanik-android/Peyvanik-v2.0-preview-debug.apk
+          mapfile -t apks < <(find peyvanik-v2/android/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk')
+          if [ "${#apks[@]}" -ne 1 ]; then echo "Expected exactly one debug APK"; exit 1; fi
+          cp "${apks[0]}" dist-peyvanik-android/Peyvanik-v2.0-preview-debug.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist-peyvanik-android/Peyvanik-v2.0-preview-debug.apk
           cd dist-peyvanik-android && sha256sum *.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
