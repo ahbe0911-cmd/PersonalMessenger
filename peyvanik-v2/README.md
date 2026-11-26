@@ -34,3 +34,6 @@ Separate login/register tabs; shrinkable RTL grid, wrapped checkbox, responsive 
 
 ## UI 2.3
 Mobile-first RTL layout, bundled Vazirmatn regular (OFL v1.1), bottom navigation, full-screen conversation, chat-style saved items, search and existing folder actions behind menu. API and server modules unchanged. Peer chat remains text-only; no fake delivery/read/presence. Voice icon in personal cloud opens existing audio file chooser (not recording); peer attachment/mic disabled with explanatory labels. Existing cloud requests/payloads retained; inline notes use existing POST notes. Physical-device validation pending.
+
+## 2.4 — private in-app media preview and responsive deletion
+Chat and My Cloud hide an item immediately after confirmation, preserve server-side deletion and restore on errors. File previews fetch the existing authenticated download endpoint on demand: image zoom, audio/video controls, plain text, and page-by-page PDF.js 4.10.38 (Apache-2.0; see PDFJS-LICENSE). No external viewer or runtime CDN. Unsupported codecs and file formats retain download fallback. Same connected UI for Android and Windows, no schema/auth/chat/cloud API changes. Live deploy and physical device checks required.
