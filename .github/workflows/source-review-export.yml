@@ -1,0 +1,47 @@
+name: Export Peyvanik source for review
+on:
+  push:
+    branches: [source-review-export-2.4]
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 3cff8ff37f856ef8817e3ba6bf89049440eb4030
+      - name: Assemble readable source
+        run: |
+          mkdir -p /tmp/peyvanik-review
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+          root=Path('.')
+          paths=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
+          selected=[p for p in paths if p and (p.startswith('peyvanik-v2/') or p.startswith('.github/workflows/peyvanik-') or p in ('settings.gradle.kts','build.gradle.kts','gradle.properties'))]
+          excluded=[]
+          out=Path('/tmp/peyvanik-review/Peyvanik-v2.4-source.txt')
+          with out.open('w',encoding='utf-8') as f:
+              f.write('PEYVANIK 2.4 SOURCE REVIEW\nSnapshot: 3cff8ff37f856ef8817e3ba6bf89049440eb4030\nBranch: peyvanik-v2\n\n')
+              f.write('Primary application source, database migrations, tests, native shells and CI. Generated web-assets.js mirrors web files; PDF vendor modules and embedded font binary are omitted in this readable edition. Full source: https://github.com/ahbe0911-cmd/PersonalMessenger/tree/3cff8ff37f856ef8817e3ba6bf89049440eb4030/peyvanik-v2\n\n')
+              f.write('FILE TREE\n'+'\n'.join(selected)+'\n')
+              for p in selected:
+                  if p.startswith('peyvanik-v2/pdf-vendor-') or p.endswith('/web-assets.js') or p.endswith('/preview-assets.js'):
+                      excluded.append(p);continue
+                  try:
+                      s=Path(p).read_text(encoding='utf-8')
+                  except (UnicodeError,OSError):
+                      excluded.append(p);continue
+                  if p.endswith('/web/app.js'):
+                      import re
+                      s=re.sub(r'atob\("[A-Za-z0-9+/=]{5000,}"\)', 'atob("[EMBEDDED FONT BASE64 OMITTED FOR REVIEW]")', s)
+                  f.write('\n\n'+'='*80+'\nFILE: '+p+'\n'+'='*80+'\n'+s+'\n')
+              f.write('\n\nOMITTED GENERATED/BINARY FILES\n'+'\n'.join(excluded)+'\n')
+          print(out, out.stat().st_size)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Peyvanik-v2.4-source-review
+          path: /tmp/peyvanik-review/Peyvanik-v2.4-source.txt
+          retention-days: 7
