@@ -1,4 +1,4 @@
-name: Peyvanik auth and security tests
+name: Peyvanik auth security and chat tests
 on:
   push:
     branches: [peyvanik-v2]
@@ -13,5 +13,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check peyvanik-v2/worker.js
-      - run: node --test peyvanik-v2/auth.test.js peyvanik-v2/security.test.js
+      - run: node --check peyvanik-v2/worker.js && node --check peyvanik-v2/chat.js
+      - run: node --test peyvanik-v2/auth.test.js peyvanik-v2/security.test.js peyvanik-v2/chat.test.js

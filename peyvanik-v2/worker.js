@@ -1,4 +1,5 @@
 import {auth,security} from './auth.js';
+import {chat} from './chat.js';
 
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'}});
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -21,7 +22,7 @@ async function body(req){try{return JSON.parse(new TextDecoder().decode(await bo
 const fields='id,kind,name,body,mime,size,created_at';
 async function handle(req,env){
  const u=new URL(req.url),p=u.pathname,m=req.method;
- if(m==='GET'&&p==='/health'){await env.DB.prepare('SELECT 1 AS ok').first();return json({ok:true,service:'peyvanik',stage:'security-preview',registration:'closed',cloud:'private-by-account'})}
+ if(m==='GET'&&p==='/health'){await env.DB.prepare('SELECT 1 AS ok').first();return json({ok:true,service:'peyvanik',stage:'chat-preview',registration:'closed',cloud:'private-by-account'})}
  // Public account creation remains gated pending OAuth configuration and testing.
  if(p.startsWith('/v2/auth/'))return auth(req,env);
  const s=await session(req,env),owner=s.account_id,db=env.DB;
@@ -62,15 +63,7 @@ async function handle(req,env){
    await db.prepare("DELETE FROM cloud_items WHERE id=? AND owner_id=? AND state='deleting'").bind(item.id,owner).run();return json({ok:true});
   }
  }
- if(p==='/v2/conversations'&&m==='GET'){
-  const r=await db.prepare('SELECT c.id,c.kind,c.created_at FROM conversations c JOIN conversation_members cm ON cm.conversation_id=c.id WHERE cm.account_id=? ORDER BY c.created_at DESC LIMIT 100').bind(owner).all();return json({conversations:r.results});
- }
- match=/^\/v2\/conversations\/([0-9a-f-]{36})\/messages$/i.exec(p);
- if(match&&uuid.test(match[1])){
-  const conversation=match[1];if(!await db.prepare('SELECT 1 FROM conversation_members WHERE conversation_id=? AND account_id=?').bind(conversation,owner).first())fail(404,'NOT_FOUND');
-  if(m==='GET'){const r=await db.prepare('SELECT id,sender_id,body,created_at FROM chat_messages WHERE conversation_id=? AND deleted_at IS NULL ORDER BY created_at DESC,id DESC LIMIT 100').bind(conversation).all();return json({messages:r.results})}
-  if(m==='POST'){const b=await body(req);if(typeof b?.text!=='string'||!b.text.trim()||b.text.length>16000)fail(400,'INVALID_MESSAGE');const id=crypto.randomUUID(),now=Date.now();await db.prepare('INSERT INTO chat_messages(id,conversation_id,sender_id,body,created_at) VALUES(?,?,?,?,?)').bind(id,conversation,owner,b.text,now).run();return json({id,sender_id:owner,body:b.text,created_at:now},201)}
- }
+ if(p==='/v2/profile'||p.startsWith('/v2/users/')||p==='/v2/blocks'||p.startsWith('/v2/blocks/')||p==='/v2/conversations'||p.startsWith('/v2/conversations/'))return chat(req,db,owner,{json,fail,body});
  return json({error:'NOT_FOUND'},404);
 }
 export default{async fetch(req,env){try{return await handle(req,env)}catch(e){return e instanceof HttpError?json({error:e.message},e.status):json({error:'SERVICE_UNAVAILABLE'},503)}}};
