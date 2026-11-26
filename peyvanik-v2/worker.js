@@ -1,3 +1,4 @@
+import {auth} from './auth.js';
 
 const json=(data,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'}});
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,9 +21,9 @@ async function body(req){try{return JSON.parse(new TextDecoder().decode(await bo
 const fields='id,kind,name,body,mime,size,created_at';
 async function handle(req,env){
  const u=new URL(req.url),p=u.pathname,m=req.method;
- if(m==='GET'&&p==='/health'){await env.DB.prepare('SELECT 1 AS ok').first();return json({ok:true,service:'peyvanik',stage:'foundation',registration:'closed',cloud:'private-by-account'})}
+ if(m==='GET'&&p==='/health'){await env.DB.prepare('SELECT 1 AS ok').first();return json({ok:true,service:'peyvanik',stage:'google-totp-preview',registration:'closed',cloud:'private-by-account'})}
  // Public account creation intentionally fails closed until a verified transactional mail service is configured and tested.
- if(p.startsWith('/v2/auth/'))return json({error:'REGISTRATION_NOT_OPEN'},503);
+ if(p.startsWith('/v2/auth/'))return auth(req,env);
  const s=await session(req,env),owner=s.account_id,db=env.DB;
  if(p==='/v2/me'&&m==='GET')return json({account:await db.prepare('SELECT id,email,username,display_name,created_at FROM accounts WHERE id=?').bind(owner).first()});
  if(p==='/v2/sessions'&&m==='GET'){const r=await db.prepare('SELECT id,device_name,created_at,last_seen_at,expires_at FROM sessions WHERE account_id=? AND revoked_at IS NULL AND expires_at>? ORDER BY last_seen_at DESC').bind(owner,Date.now()).all();return json({sessions:r.results,current:s.session_id})}
