@@ -1,3 +1,4 @@
+import assets from './web-assets.js';
 
 const COOKIE='__Host-peyvanik';
 const tokenPattern=/^[a-f0-9]{64}$/;
@@ -9,10 +10,11 @@ function allowed(path){return /^\/v2\/(?:auth\/(?:config|nonce|google|totp|devic
 async function upstream(env,path,method,token,body,contentType,ip){const headers=new Headers();if(token)headers.set('Authorization','Bearer '+token);if(contentType)headers.set('Content-Type',contentType);if(ip)headers.set('CF-Connecting-IP',ip);return env.API.fetch(new Request('https://peyvanik-api.internal'+path,{method,headers,...(body?{body}:{} )}))}
 export default{async fetch(req,env){
  try{const u=new URL(req.url),p=u.pathname,m=req.method,origin=req.headers.get('Origin'),site=req.headers.get('Sec-Fetch-Site');
+ if(p==='/health'&&m==='GET'){const r=await upstream(env,'/health','GET',null,null,null,null);const b=await r.json();const config=await upstream(env,'/v2/auth/config','GET',null,null,null,null);const c=await config.json();return json({ok:r.ok&&b.ok===true&&config.ok,service:'peyvanik-web',backend:b.service==='peyvanik'?'connected':'unavailable',registration:c.enabled?'open':'closed'},r.ok&&b.ok&&config.ok?200:503)}
  if(!p.startsWith('/api/')){
   if(!['GET','HEAD'].includes(m))return json({error:'METHOD_NOT_ALLOWED'},405);
   if(!['/','/index.html','/app.js','/style.css','/icon.svg'].includes(p))return json({error:'NOT_FOUND'},404);
-  const r=await env.ASSETS.fetch(req);const h=new Headers(r.headers);for(const [k,v] of Object.entries(securityHeaders))h.set(k,v);return new Response(r.body,{status:r.status,headers:h})
+  const a=assets[p==='/'?'/index.html':p];if(!a)return json({error:'NOT_FOUND'},404);return new Response(m==='HEAD'?null:a.body,{headers:{...securityHeaders,'Content-Type':a.type}})
  }
  // Require an explicit same-origin fetch marker; never forward browser-supplied bearer tokens.
  if(req.headers.get('X-Peyvanik-Request')!=='1'||(site&&site!=='same-origin')||(origin&&origin!==u.origin)||(!['GET','HEAD'].includes(m)&&origin!==u.origin))return json({error:'FORBIDDEN'},403);

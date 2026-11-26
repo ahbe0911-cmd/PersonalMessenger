@@ -25,7 +25,7 @@ let gisPromise;
 function loadGIS(){if(window.google?.accounts?.id)return Promise.resolve();if(!gisPromise)gisPromise=new Promise((res,rej)=>{const s=el('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=res;s.onerror=()=>{gisPromise=null;s.remove();rej(Error('GOOGLE_UNAVAILABLE'))};document.head.append(s)});return gisPromise}
 async function initLogin(){
  const epoch=state.epoch;$('login-status').textContent='در حال بررسی وضعیت ورود…';$('otp').hidden=true;$('google').replaceChildren();
- try{const c=await api('/v2/auth/config');if(!c.enabled){$('login-status').textContent='نسخه در مرحله آزمایشی است. ثبت‌نام عمومی پس از اتصال گوگل فعال می‌شود.';return}
+ try{const c=await api('/v2/auth/config');if(!c.enabled){$('login-status').textContent='سرور پیونیک آماده است. ورود پس از اتصال حساب گوگل فعال خواهد شد.';return}
  const n=await api('/v2/auth/nonce','POST',{});await loadGIS();if(epoch!==state.epoch)return;$('login-status').textContent='با حساب گوگل خود ادامه دهید.';
  google.accounts.id.initialize({client_id:c.google_client_id,nonce:n.nonce,callback:async r=>{if(epoch!==state.epoch)return;try{const t=await api('/v2/auth/google','POST',{id_token:r.credential,nonce:n.nonce,device_name:$('device').value.trim()||'مرورگر'});showTicket(t)}catch(e){err(e);void initLogin()}}});
  google.accounts.id.renderButton($('google'),{theme:'outline',size:'large',text:'continue_with',width:260});

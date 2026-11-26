@@ -16,3 +16,6 @@ RTL Persian adaptive UI with login/manual setup, chat/search/block, private clou
 
 ## Phase 7 preview packages
 Android and Windows **browser launchers**, not complete native clients, separate app IDs/install paths. They open the public visual preview at https://peyvanik-preview.ahbe0911.workers.dev/ using the system browser. Preview worker is deliberately disconnected from any account DB; registration and messaging are disabled. Build workflow outputs debug APK and unsigned x64 setup. Windows launcher docks right at 35% width; the external browser controls its own window. Native share, embedded authenticated session, notifications and release signing remain pending. Full deployment requires actual Google OAuth client ID, server key, migrations and real integration/security tests. Existing PersonalMessenger remains unchanged.
+
+## Operational staging
+Actual web Worker `peyvanik-web` uses private `peyvanik-v2-api` service binding and bundled assets. Preview remains separate. Database migrations 002–005 and API deployment performed independently. Registration remains gated until Google web client ID is configured and real sign-in verified. Encryption secret configured server-side, never in source. Desktop/mobile launcher remains a browser-based preview package; native client work remains pending. No migration of PersonalMessenger data.
