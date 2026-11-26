@@ -13,14 +13,15 @@ export async function keyAuth(req,env,{json,fail,body}){
  if(req.method!=='POST')fail(405,'METHOD_NOT_ALLOWED');
  const ip=await hash('key-ip:'+(req.headers.get('CF-Connecting-IP')||'unknown'));await limit(db,'ip:'+ip,30,now,fail);await limit(db,'global',300,now,fail);
  const b=await body(req),device=typeof b?.device_name==='string'?b.device_name.trim():'';
- if(!device||device.length>80)fail(400,'INVALID_INPUT');
- if(p==='/v2/auth/key-register'){
+ if(p!=='/v2/auth/key-issue'&&(!device||device.length>80))fail(400,'INVALID_INPUT');
+ if(p==='/v2/auth/key-register'||p==='/v2/auth/key-issue'){
   await limit(db,'register:'+ip,5,now,fail);await limit(db,'register-global',30,now,fail);
   const username=typeof b.username==='string'?b.username.trim().toLowerCase():'',name=typeof b.display_name==='string'?b.display_name.trim():'';
   if(!/^[a-z][a-z0-9_]{2,31}$/.test(username)||!name||name.length>80||b.accept_key_responsibility!==true)fail(400,'INVALID_PROFILE');
   const id=crypto.randomUUID(),access_key='pk_'+random(),digest=await hash(access_key),account={id,username,display_name:name,created_at:now};
   // Legacy email column is required by schema; this internal placeholder is not a verified address and never exposed.
   try{await db.batch([db.prepare("INSERT INTO accounts(id,email,username,display_name,created_at,verified_at) SELECT ?,?,?,?,?,? WHERE (SELECT count(*) FROM key_identities)<100").bind(id,id+'@key.invalid',username,name,now,0),db.prepare('INSERT INTO key_identities(account_id,key_hash,created_at) VALUES(?,?,?)').bind(id,digest,now)])}catch(e){if(/UNIQUE/i.test(String(e)))fail(409,'USERNAME_TAKEN');if(/FOREIGN KEY/i.test(String(e)))fail(507,'REGISTRATION_LIMIT');throw e}
+  if(p==='/v2/auth/key-issue')return json({account,access_key},201);
   return json({...await issue(db,account,device,now,digest,fail),access_key},201);
  }
  if(p==='/v2/auth/key-login'){

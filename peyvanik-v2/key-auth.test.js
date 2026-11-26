@@ -15,5 +15,7 @@ test('key signup and login isolate accounts, reject invalid keys and revoke othe
  assert.equal((await call('/v2/security/revoke-others',{key:a.data.access_key},a.data.token)).status,200);
  assert.equal((await call('/v2/me',undefined,pc.data.token)).status,401);
  assert.equal((await call('/v2/me',undefined,b.data.token)).status,200);
+ const issued=await call('/v2/auth/key-issue',{username:'carol',display_name:'Carol',accept_key_responsibility:true});assert.equal(issued.status,201);assert.equal(issued.data.token,undefined);assert.equal(raw.prepare('SELECT count(*) AS n FROM sessions WHERE account_id=?').get(issued.data.account.id).n,0);
+ const c=await call('/v2/auth/key-login',{key:issued.data.access_key,device_name:'pc'});assert.equal(c.status,201);assert.equal(c.data.account.id,issued.data.account.id);
  raw.close();
 });

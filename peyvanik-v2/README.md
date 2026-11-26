@@ -22,3 +22,6 @@ Actual web Worker `peyvanik-web` uses private `peyvanik-v2-api` service binding 
 
 ## Key access mode
 Separate high-entropy 256-bit account keys, generated server-side, hash only stored, one-time display. No Google, email or TOTP required for key accounts. Initial 100-account pilot cap, fixed-window abuse limits, existing session revocation. No self-service lost-key recovery; keep key safe. Google routes remain gated off. KEY_AUTH_OPEN controls registration/login. Never reuse legacy shared enrollment key.
+
+## Keymaker
+Dedicated web /keymaker and Windows native key issuer. Public signup policy unchanged; creates new accounts only, never resets existing keys, no admin access, no session issued, same limits. Server response only displays new key once. Explicit text export stores plaintext; handle carefully. Network required. Windows executable unsigned.
