@@ -1,4 +1,4 @@
-name: Build Peyvanik preview Android and Windows
+name: Build Peyvanik 2.1 connected apps
 on:
   push:
     branches: [peyvanik-v2]
@@ -6,7 +6,6 @@ on:
       - 'peyvanik-v2/android/**'
       - 'peyvanik-v2/windows/**'
       - '.github/workflows/peyvanik-preview-build.yml'
-      - 'settings.gradle.kts'
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,13 +29,13 @@ jobs:
       - run: |
           mkdir -p dist-peyvanik-android
           mapfile -t apks < <(find peyvanik-v2/android/build/outputs/apk/debug -maxdepth 1 -type f -name '*.apk')
-          if [ "${#apks[@]}" -ne 1 ]; then echo "Expected exactly one debug APK"; exit 1; fi
-          cp "${apks[0]}" dist-peyvanik-android/Peyvanik-v2.0-preview-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist-peyvanik-android/Peyvanik-v2.0-preview-debug.apk
+          if [ "${#apks[@]}" -ne 1 ]; then exit 1; fi
+          cp "${apks[0]}" dist-peyvanik-android/Peyvanik-v2.1.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist-peyvanik-android/Peyvanik-v2.1.apk
           cd dist-peyvanik-android && sha256sum *.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: Peyvanik-Android-Preview
+          name: Peyvanik-Android-v2.1
           path: dist-peyvanik-android/
           if-no-files-found: error
           retention-days: 14
@@ -48,7 +47,16 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - name: Generate icon
+        shell: powershell
+        run: .\peyvanik-v2\windows\Assets\CreateIcon.ps1
       - run: dotnet publish peyvanik-v2/windows/PeyvanikPreview.csproj -c Release -r win-x64 --self-contained true -o peyvanik-v2/windows/publish
+      - name: Download verified WebView2 runtime installer
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "peyvanik-v2/windows/MicrosoftEdgeWebview2Setup.exe"
+          $sig = Get-AuthenticodeSignature "peyvanik-v2/windows/MicrosoftEdgeWebview2Setup.exe"
+          if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'Microsoft') { throw "Invalid bootstrapper signature" }
       - name: Compile installer
         shell: pwsh
         run: |
@@ -59,13 +67,13 @@ jobs:
           }
           & $iscc peyvanik-v2/windows/Setup.iss
           if ($LASTEXITCODE -ne 0) { throw "Installer compilation failed" }
-          $file = 'dist-peyvanik-win/Peyvanik-v2.0-preview-x64-Setup.exe'
+          $file = 'dist-peyvanik-win/Peyvanik-v2.1-x64-Setup.exe'
           if (!(Test-Path $file)) { throw "Missing installer" }
           $hash=(Get-FileHash $file -Algorithm SHA256).Hash.ToLower()
-          "$hash  Peyvanik-v2.0-preview-x64-Setup.exe" | Out-File dist-peyvanik-win/SHA256SUMS.txt -Encoding ascii
+          "$hash  Peyvanik-v2.1-x64-Setup.exe" | Out-File dist-peyvanik-win/SHA256SUMS.txt -Encoding ascii
       - uses: actions/upload-artifact@v4
         with:
-          name: Peyvanik-Windows-Preview
+          name: Peyvanik-Windows-v2.1
           path: dist-peyvanik-win/
           if-no-files-found: error
           retention-days: 14

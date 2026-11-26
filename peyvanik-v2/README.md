@@ -25,3 +25,6 @@ Separate high-entropy 256-bit account keys, generated server-side, hash only sto
 
 ## Keymaker
 Dedicated web /keymaker and Windows native key issuer. Public signup policy unchanged; creates new accounts only, never resets existing keys, no admin access, no session issued, same limits. Server response only displays new key once. Explicit text export stores plaintext; handle carefully. Network required. Windows executable unsigned.
+
+## 2.1 connected clients
+Android embedded system WebView and Windows WebView2 use production HTTPS origin, separate app identity, no external browser launcher or Google flow. Android file chooser and user-selected download destination, Windows right 35% dock and tray. Keymaker web only: standalone Windows keymaker sources and workflow removed from active branch. Debug-signed APK and unsigned Windows installer; device-level validation, native push/share, E2EE and release signing still pending.

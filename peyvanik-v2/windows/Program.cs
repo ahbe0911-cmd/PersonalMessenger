@@ -1,32 +1,38 @@
-using System;
 using System.Diagnostics;
 using System.Drawing;
-using System.Windows.Forms;
-namespace PeyvanikPreview;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
+namespace Peyvanik;
 static class Program {
- [STAThread] static void Main() {
-  ApplicationConfiguration.Initialize(); Application.Run(new PreviewForm());
- }
+ [STAThread] static void Main(){ApplicationConfiguration.Initialize();Application.Run(new MessengerWindow());}
 }
-sealed class PreviewForm : Form {
- const string Url="https://peyvanik-preview.ahbe0911.workers.dev/";
- public PreviewForm(){
-  Text="Peyvanik — پیونیک 2.0 Preview"; RightToLeft=RightToLeft.Yes; RightToLeftLayout=true;
-  BackColor=Color.FromArgb(241,247,245); ForeColor=Color.FromArgb(7,94,84); Font=new Font("Tahoma",11);
-  StartPosition=FormStartPosition.Manual; var area=Screen.PrimaryScreen!.WorkingArea;
-  int width=Math.Max(320,(int)(area.Width*0.35)); width=Math.Min(width,area.Width);
-  Bounds=new Rectangle(area.Right-width,area.Top,width,area.Height);
-  MinimumSize=new Size(300,320);
-  var panel=new TableLayoutPanel{Dock=DockStyle.Fill,Padding=new Padding(24),ColumnCount=1,RowCount=5};
-  panel.RowStyles.Add(new RowStyle(SizeType.Percent,25));
-  panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-  panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-  panel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-  panel.RowStyles.Add(new RowStyle(SizeType.Percent,75));
-  var heading=new Label{Text="پیونیک",Font=new Font("Tahoma",28,FontStyle.Bold),AutoSize=true,Anchor=AnchorStyles.None};
-  var note=new Label{Text="نسخه آزمایشی ۲.۰\nرابط پیونیک در مرورگر امن سیستم باز می‌شود.\nثبت‌نام عمومی هنوز فعال نیست.",AutoSize=true,MaximumSize=new Size(Math.Max(240,width-64),0),Anchor=AnchorStyles.None,TextAlign=ContentAlignment.MiddleCenter,Padding=new Padding(0,16,0,16)};
-  var open=new Button{Text="باز کردن پیونیک",Height=52,Dock=DockStyle.Top,FlatStyle=FlatStyle.Flat,BackColor=Color.FromArgb(8,125,112),ForeColor=Color.White};
-  open.Click+=(_,_)=>{try{Process.Start(new ProcessStartInfo(Url){UseShellExecute=true});}catch{MessageBox.Show("مرورگر سیستم در دسترس نیست.");}};
-  panel.Controls.Add(heading,0,1);panel.Controls.Add(note,0,2);panel.Controls.Add(open,0,3);Controls.Add(panel);
+sealed class MessengerWindow:Form{
+ const string Origin="https://peyvanik-web.ahbe0911.workers.dev";
+ readonly WebView2 web=new(){Dock=DockStyle.Fill,DefaultBackgroundColor=Color.FromArgb(241,247,245)};
+ readonly Label status=new(){Dock=DockStyle.Top,Height=34,TextAlign=ContentAlignment.MiddleCenter,Text="در حال اتصال به پیونیک…"};
+ readonly Button retry=new(){Dock=DockStyle.Top,Height=42,Text="تلاش مجدد",Visible=false};
+ readonly NotifyIcon tray=new();bool exiting=false,starting=false;
+ public MessengerWindow(){
+  Text="پیونیک | Peyvanik";MinimumSize=new Size(340,400);StartPosition=FormStartPosition.Manual;var area=Screen.PrimaryScreen?.WorkingArea??new Rectangle(0,0,1920,1080);int width=Math.Min(area.Width,Math.Max(340,(int)(area.Width*.35)));Bounds=new Rectangle(area.Right-width,area.Top,width,area.Height);
+  Icon=Icon.ExtractAssociatedIcon(Application.ExecutablePath)??SystemIcons.Application;Controls.Add(web);Controls.Add(retry);Controls.Add(status);
+  var menu=new ContextMenuStrip{RightToLeft=RightToLeft.Yes};menu.Items.Add("باز کردن پیونیک",null,(_,_)=>Restore());menu.Items.Add("بارگذاری مجدد",null,async(_,_)=>await Connect());menu.Items.Add("خروج کامل",null,(_,_)=>{exiting=true;Close();});tray.Icon=Icon;tray.Text="پیونیک";tray.ContextMenuStrip=menu;tray.Visible=true;tray.DoubleClick+=(_,_)=>Restore();
+  retry.Click+=async(_,_)=>await Connect();Shown+=async(_,_)=>await Connect();
+  FormClosing+=(_,e)=>{if(!exiting&&e.CloseReason==CloseReason.UserClosing){e.Cancel=true;Hide();}};
+  FormClosed+=(_,_)=>{tray.Visible=false;tray.Dispose();web.Dispose();};
+ }
+ void Restore(){Show();if(WindowState==FormWindowState.Minimized)WindowState=FormWindowState.Normal;Activate();}
+ static bool Trusted(string? s)=>Uri.TryCreate(s,UriKind.Absolute,out var u)&&u.Scheme=="https"&&u.IdnHost=="peyvanik-web.ahbe0911.workers.dev"&&u.Port==443&&string.IsNullOrEmpty(u.UserInfo);
+ async Task Connect(){
+  if(starting)return;starting=true;status.Visible=true;status.Text="در حال اتصال به پیونیک…";retry.Visible=false;
+  try{
+   if(web.CoreWebView2==null){
+    var path=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Peyvanik","WebView2");Directory.CreateDirectory(path);await web.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateAsync(null,path));
+    var c=web.CoreWebView2;c.Settings.AreDevToolsEnabled=false;c.Settings.IsWebMessageEnabled=false;c.Settings.IsStatusBarEnabled=false;
+    c.NavigationStarting+=(_,e)=>{if(!Trusted(e.Uri))e.Cancel=true;};c.NewWindowRequested+=(_,e)=>e.Handled=true;c.PermissionRequested+=(_,e)=>e.State=CoreWebView2PermissionState.Deny;
+    c.NavigationCompleted+=(_,e)=>{status.Visible=!e.IsSuccess;retry.Visible=!e.IsSuccess;if(!e.IsSuccess)status.Text="اتصال برقرار نشد: "+e.WebErrorStatus;};
+    c.ProcessFailed+=(_,e)=>{status.Visible=true;retry.Visible=true;status.Text="موتور نمایش متوقف شد؛ برنامه را دوباره اجرا کنید.";};
+   }
+   web.CoreWebView2.Navigate(Origin+"/");
+  }catch(Exception e){status.Text="اتصال برقرار نشد: "+e.GetType().Name;retry.Visible=true;status.Visible=true;}finally{starting=false;}
  }
 }
