@@ -36,7 +36,7 @@ public final class MainActivity extends Activity {
    root.setOnApplyWindowInsetsListener((view,insets)->{android.graphics.Insets bars=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout()|WindowInsets.Type.ime());view.setPadding(bars.left,bars.top,bars.right,bars.bottom);return WindowInsets.CONSUMED;});
    root.requestApplyInsets();
   }
-  WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);settings.setSupportMultipleWindows(false);settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setSaveFormData(false);settings.setUserAgentString(settings.getUserAgentString()+" PeyvanikAndroid/2.2");WebView.setWebContentsDebuggingEnabled(false);
+  WebSettings settings=web.getSettings();settings.setJavaScriptEnabled(true);settings.setDomStorageEnabled(true);settings.setAllowFileAccess(false);settings.setAllowContentAccess(true);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);settings.setSupportMultipleWindows(false);settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setSaveFormData(false);settings.setUserAgentString(settings.getUserAgentString()+" PeyvanikAndroid/2.5");WebView.setWebContentsDebuggingEnabled(false);
   CookieManager.getInstance().setAcceptCookie(true);CookieManager.getInstance().setAcceptThirdPartyCookies(web,false);
   web.setWebViewClient(new WebViewClient(){
    @Override public boolean shouldOverrideUrlLoading(WebView w,WebResourceRequest r){Uri u=r.getUrl();if(!r.isForMainFrame())return !trusted(u);if(!trusted(u))return true;if("/native-download".equals(u.getPath())){download(u);return true;}return false;}
@@ -46,7 +46,7 @@ public final class MainActivity extends Activity {
   web.setWebChromeClient(new WebChromeClient(){
    @Override public boolean onShowFileChooser(WebView w,ValueCallback<Uri[]> cb,FileChooserParams params){
     if(chooser!=null)chooser.onReceiveValue(null);chooser=cb;
-    try{Intent pick=new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*");startActivityForResult(pick,PICK);return true;}catch(Exception ex){chooser=null;cb.onReceiveValue(null);return true;}
+    try{Intent pick=new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE);java.util.ArrayList<String> types=new java.util.ArrayList<>();for(String t:params.getAcceptTypes())if(t!=null&&!t.isEmpty()&&t.contains("/"))types.add(t);pick.setType(types.size()==1?types.get(0):"*/*");if(types.size()>1)pick.putExtra(Intent.EXTRA_MIME_TYPES,types.toArray(new String[0]));startActivityForResult(pick,PICK);return true;}catch(Exception ex){chooser=null;cb.onReceiveValue(null);return true;}
    }
    @Override public void onPermissionRequest(PermissionRequest r){r.deny();}
   });

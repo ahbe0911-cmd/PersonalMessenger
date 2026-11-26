@@ -4,7 +4,7 @@ using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 namespace Peyvanik;
 static class Program {
- [STAThread] static void Main(){ApplicationConfiguration.Initialize();Application.Run(new MessengerWindow());}
+ [STAThread] static void Main(){using var mutex=new System.Threading.Mutex(true,"Local\\PeyvanikMessenger",out bool first);if(!first)return;ApplicationConfiguration.Initialize();Application.Run(new MessengerWindow());}
 }
 sealed class MessengerWindow:Form{
  const string Origin="https://peyvanik-web.ahbe0911.workers.dev";
@@ -27,7 +27,7 @@ sealed class MessengerWindow:Form{
   try{
    if(web.CoreWebView2==null){
     var path=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Peyvanik","WebView2");Directory.CreateDirectory(path);await web.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateAsync(null,path));
-    var c=web.CoreWebView2;c.Settings.AreDevToolsEnabled=false;c.Settings.IsWebMessageEnabled=false;c.Settings.IsStatusBarEnabled=false;
+    var c=web.CoreWebView2;c.Settings.AreDevToolsEnabled=false;c.Settings.IsWebMessageEnabled=false;c.Settings.IsStatusBarEnabled=false;c.Settings.IsPasswordAutosaveEnabled=false;c.Settings.IsGeneralAutofillEnabled=false;
     c.NavigationStarting+=(_,e)=>{if(!Trusted(e.Uri))e.Cancel=true;};c.NewWindowRequested+=(_,e)=>e.Handled=true;c.PermissionRequested+=(_,e)=>e.State=CoreWebView2PermissionState.Deny;
     c.NavigationCompleted+=(_,e)=>{status.Visible=!e.IsSuccess;retry.Visible=!e.IsSuccess;if(!e.IsSuccess)status.Text="اتصال برقرار نشد: "+e.WebErrorStatus;};
     c.ProcessFailed+=(_,e)=>{status.Visible=true;retry.Visible=true;status.Text="موتور نمایش متوقف شد؛ برنامه را دوباره اجرا کنید.";};

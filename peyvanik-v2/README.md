@@ -37,3 +37,6 @@ Mobile-first RTL layout, bundled Vazirmatn regular (OFL v1.1), bottom navigation
 
 ## 2.4 — private in-app media preview and responsive deletion
 Chat and My Cloud hide an item immediately after confirmation, preserve server-side deletion and restore on errors. File previews fetch the existing authenticated download endpoint on demand: image zoom, audio/video controls, plain text, and page-by-page PDF.js 4.10.38 (Apache-2.0; see PDFJS-LICENSE). No external viewer or runtime CDN. Unsupported codecs and file formats retain download fallback. Same connected UI for Android and Windows, no schema/auth/chat/cloud API changes. Live deploy and physical device checks required.
+
+## 2.5 — review phase 1 (compatible changes)
+Incremental message DOM, serialized sync, visibility-aware chat polling, no redundant key-account device polls, conditional public static cache with ETags, Persian local message search, upload progress/cancel, accessible composer, Android audio MIME chooser, Windows single-instance and explicit autofill preferences. Existing API, storage and account keys unchanged. Signing continuity, invitations/rate policy, Cron, R2, E2EE and groups are not part of this phase. Debug APK remains debug until signing continuity is planned.
