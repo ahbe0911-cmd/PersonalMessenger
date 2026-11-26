@@ -7,7 +7,7 @@ import {newDeviceCode,newRecoveryCode,passwordDigest,security,auth} from './auth
 import worker from './worker.js';
 function makeDB(){
  const raw=new DatabaseSync(':memory:');raw.exec('PRAGMA foreign_keys=ON');
- for(const p of ['schema.sql','002-auth.sql','003-security.sql'])raw.exec(readFileSync(new URL(p,import.meta.url),'utf8'));
+ for(const p of ['schema.sql','002-auth.sql','003-security.sql','006-key-auth.sql'])raw.exec(readFileSync(new URL(p,import.meta.url),'utf8'));
  const db={prepare(sql){const make=args=>({first:async()=>raw.prepare(sql).get(...args)??null,all:async()=>({results:raw.prepare(sql).all(...args)}),run:async()=>({meta:{changes:Number(raw.prepare(sql).run(...args).changes)}}),sql,args});return make([]).bind?make([]):{...make([]),bind:(...args)=>make(args)}},async batch(items){raw.exec('BEGIN');try{const r=[];for(const i of items)r.push(await i.run());raw.exec('COMMIT');return r}catch(e){raw.exec('ROLLBACK');throw e}}};
  return {raw,db};
 }
