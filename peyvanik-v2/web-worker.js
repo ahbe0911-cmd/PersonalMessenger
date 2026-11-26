@@ -1,8 +1,9 @@
 import assets from './web-assets.js';
+import pdfAssets from './pdf-assets.js';
 
 const COOKIE='__Host-peyvanik';
 const tokenPattern=/^[a-f0-9]{64}$/;
-const securityHeaders={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Permissions-Policy':'camera=(), microphone=(), geolocation=()','Content-Security-Policy':"default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://accounts.google.com/gsi/; img-src 'self' data: https://*.gstatic.com https://*.googleusercontent.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",'Cross-Origin-Opener-Policy':'same-origin-allow-popups'};
+const securityHeaders={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'DENY','Permissions-Policy':'camera=(), microphone=(), geolocation=()','Content-Security-Policy':"default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://accounts.google.com/gsi/style; frame-src https://accounts.google.com/gsi/; connect-src 'self' https://accounts.google.com/gsi/; img-src 'self' blob: data: https://*.gstatic.com https://*.googleusercontent.com; media-src 'self' blob:; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",'Cross-Origin-Opener-Policy':'same-origin-allow-popups'};
 const json=(v,status=200,headers={})=>Response.json(v,{status,headers:{...securityHeaders,...headers}});
 const cookie=(t,age)=>COOKIE+'='+t+'; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age='+age;
 function session(req){const parts=(req.headers.get('Cookie')||'').split(';').map(x=>x.trim());const matches=parts.filter(x=>x.startsWith(COOKIE+'='));if(matches.length!==1)return null;const t=matches[0].slice(COOKIE.length+1);return tokenPattern.test(t)?t:null}
@@ -21,8 +22,8 @@ export default{async fetch(req,env){
  }
  if(!p.startsWith('/api/')){
   if(!['GET','HEAD'].includes(m))return json({error:'METHOD_NOT_ALLOWED'},405);
-  if(!['/','/index.html','/app.js','/style.css','/icon.svg','/keymaker','/keymaker.js'].includes(p))return json({error:'NOT_FOUND'},404);
-  const a=assets[p==='/'?'/index.html':p==='/keymaker'?'/keymaker.html':p];if(!a)return json({error:'NOT_FOUND'},404);return new Response(m==='HEAD'?null:a.body,{headers:{...securityHeaders,'Content-Type':a.type}})
+  if(!['/','/index.html','/app.js','/style.css','/icon.svg','/keymaker','/keymaker.js','/pdf.min.mjs','/pdf.worker.min.mjs'].includes(p))return json({error:'NOT_FOUND'},404);
+  const a=pdfAssets[p]||assets[p==='/'?'/index.html':p==='/keymaker'?'/keymaker.html':p];if(!a)return json({error:'NOT_FOUND'},404);return new Response(m==='HEAD'?null:a.body,{headers:{...securityHeaders,'Content-Type':a.type}})
  }
  // Require an explicit same-origin fetch marker; never forward browser-supplied bearer tokens.
  if(req.headers.get('X-Peyvanik-Request')!=='1'||(site&&site!=='same-origin')||(origin&&origin!==u.origin)||(!['GET','HEAD'].includes(m)&&origin!==u.origin))return json({error:'FORBIDDEN'},403);
