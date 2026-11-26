@@ -7,3 +7,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "PersonalMessenger"
 include(":app")
+
+include(":peyvanik-preview")
+project(":peyvanik-preview").projectDir = file("peyvanik-v2/android")
