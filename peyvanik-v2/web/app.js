@@ -104,6 +104,17 @@ function planPoll(){clearTimeout(pollTimer);if(state.account&&!document.hidden&&
 async function pollNow(){clearTimeout(pollTimer);if(polling||!state.account||document.hidden||state.view!=='chat')return;if(!navigator.onLine){connectionStatus('اتصال اینترنت قطع است');return}const e=state.epoch;polling=true;try{if(state.cid)await sync();else await conversations();if(e===state.epoch){pollFailures=0;connectionStatus('')}}catch(ex){if(e===state.epoch&&ex.message!=='UNAUTHORIZED'&&ex.message!=='STALE_SESSION'){pollFailures++;connectionStatus('اتصال به سرور برقرار نیست؛ تلاش مجدد خودکار')}}finally{polling=false;planPoll()}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden)clearTimeout(pollTimer);else void pollNow()});window.addEventListener('offline',()=>{clearTimeout(pollTimer);if(state.account)connectionStatus('اتصال اینترنت قطع است')});window.addEventListener('online',()=>{pollFailures=0;if(state.account){connectionStatus(state.view==='chat'?'در حال بررسی اتصال…':'');void pollNow()}});
 
+/* Local appearance only: no account data, API calls, or shared storage of messages. */
+const themeOptions=['system','light','dark'],themeLabels={system:'سیستم',light:'روشن',dark:'تاریک'},themeMedia=matchMedia('(prefers-color-scheme: dark)');
+let themePreference='system';
+try{const saved=localStorage.getItem('peyvanik.appearance.v1');if(themeOptions.includes(saved))themePreference=saved}catch{}
+function applyTheme(){const dark=themePreference==='dark'||(themePreference==='system'&&themeMedia.matches);document.documentElement.dataset.theme=dark?'dark':'light';document.documentElement.dataset.themePreference=themePreference;document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#101e22':'#075e54');for(const id of ['login-theme','app-theme']){const b=$(id);b.textContent='ظاهر: '+themeLabels[themePreference];b.setAttribute('aria-label','تغییر پوسته؛ حالت فعلی '+themeLabels[themePreference]);b.title='تغییر حالت سیستم، روشن و تاریک'}}
+function cycleTheme(){themePreference=themeOptions[(themeOptions.indexOf(themePreference)+1)%themeOptions.length];try{localStorage.setItem('peyvanik.appearance.v1',themePreference)}catch{}applyTheme()}
+for(const id of ['login-theme','app-theme'])$(id).addEventListener('click',cycleTheme);
+if(themeMedia.addEventListener)themeMedia.addEventListener('change',applyTheme);else themeMedia.addListener?.(applyTheme);
+window.addEventListener('storage',e=>{if(e.key==='peyvanik.appearance.v1'||e.key===null){themePreference=themeOptions.includes(e.newValue)?e.newValue:'system';applyTheme()}});
+applyTheme();
+
 /* Presentation-only navigation, local search and composer controls. No new API routes. */
 function updateComposer(){
  for(const id of ['message','cloud-message']){const t=$(id);if(t.getClientRects().length){t.style.height='auto';t.style.height=Math.min(110,Math.max(43,t.scrollHeight))+'px'}}

@@ -39,3 +39,52 @@ dialog{border:0;border-radius:17px;width:min(92vw,420px);max-width:100%;max-heig
 
 /* 2.5 phase 4: private cloud list status and filter visibility. */
 .cloud-filter-status{display:flex;flex:none;align-items:center;justify-content:space-between;gap:8px;padding:6px 12px;background:#e8f4ee;font-size:.78rem;color:var(--ink)}.cloud-filter-status[hidden]{display:none}.cloud-filter-status span{min-width:0;overflow-wrap:anywhere}.cloud-filter-status button{flex-shrink:0;min-height:36px}.cloud-history{overflow-anchor:none}
+
+/* 2.5 phase 5: adaptive visual system, no changes to data or API. */
+:root{--surface:#fff;--surface-alt:#f5f8f7;--input:#f8fbfa;--soft:#e6f2ed;--avatar:#dcefe7;--incoming:#fff;--bubble-ink:#173831;--bubble-meta:#52685e;--nav-muted:#52695f;--warning-bg:#fff4d9;--warning-ink:#694800;--danger:#a13236;--focus:#168b78;--header:#087b68;--header-end:#065b50;--chat-dot:#8d9f931c;--modal-shadow:0 18px 60px #122c3433}
+:root[data-theme=dark]{color-scheme:dark;--accent:#007b68;--deep:#8fe0c8;--ink:#e4f0ec;--muted:#a4b9b4;--line:#30464a;--paper:#142528;--bg:#101e22;--chat:#101f22;--out:#20483d;--surface:#1b3033;--surface-alt:#15292c;--input:#102326;--soft:#25463f;--avatar:#294c43;--incoming:#23383c;--bubble-ink:#e8f3ef;--bubble-meta:#b0c6bd;--nav-muted:#b0c6be;--warning-bg:#493b25;--warning-ink:#ffe4a5;--danger:#ffa7ab;--focus:#7edfc7;--header:#234b43;--header-end:#163632;--chat-dot:#88b4a51c;--shadow:0 12px 36px #0004;--modal-shadow:0 18px 60px #0008}
+html,body{background:var(--bg);color:var(--ink)}
+button{background:var(--surface);border-color:var(--line);color:var(--deep);transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease}
+button.primary,.round-send,#chat-mic{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{color:var(--danger)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input,select,textarea{background:var(--input);border-color:var(--line)}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:1}
+.login{background:radial-gradient(ellipse at 90% 0,var(--soft),transparent 65%),var(--bg)}
+.login-card{background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}
+.login-tabs{background:var(--surface-alt)}
+.login-tabs button[aria-pressed=true]{background:var(--surface);color:var(--deep);box-shadow:0 2px 6px #0001}
+code{background:var(--surface-alt)}
+.login-footer{grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px 6px}
+.login-footer>span{grid-column:1/-1}
+.theme-switch{font-size:.7rem;min-height:26px;padding:2px 8px;line-height:1.4;white-space:nowrap;border-radius:10px}
+.top .theme-switch{color:#fff;background:#ffffff16;border-color:#ffffff55;min-height:32px;flex-shrink:0}
+.top,.chat-header,#cloud .cloud-header{background:linear-gradient(125deg,var(--header),var(--header-end));color:#fff}
+.top .clock{margin-inline-start:auto}
+.bottom-nav,.chat-list,.search-strip,.cloud-tools,.upload-status,.composer-pill,.composer textarea,.pdf-toolbar{background:var(--surface)}
+.bottom-nav button{color:var(--nav-muted)}
+.bottom-nav button.active{background:var(--soft);color:var(--deep)}
+.conversation{background:var(--surface);border-bottom-color:var(--line);color:var(--ink);border-radius:12px;padding-inline:10px}
+.conversation:hover,.conversation:focus-visible{background:var(--surface-alt)}
+.avatar{background:var(--avatar);color:var(--deep);border-radius:16px}
+.chat-header .avatar{border-radius:14px}
+.chat-header .icon-button{color:#fff}
+.icon-button:hover{background:var(--soft)}
+.chat-header .icon-button:hover{background:#ffffff20}
+.messages,.cloud-history{background-color:var(--chat);background-image:radial-gradient(var(--chat-dot) 1px,transparent 1px);background-size:22px 22px}
+.bubble,.saved-bubble{background:var(--incoming);color:var(--bubble-ink);border:1px solid var(--line);box-shadow:0 2px 5px #0000000b;border-radius:17px 17px 6px 17px}
+.bubble.mine,.saved-bubble{background:var(--out);border-radius:17px 6px 17px 17px}
+.bubble footer small,.bubble button,.composer-pill .icon-button{color:var(--bubble-meta)}
+.load-more,.cloud-messages>.muted{background:var(--surface);color:var(--deep)}
+#security{background:var(--bg)}
+.panel,.logout-button,dialog,.media-dialog{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.logout-button.danger{color:var(--danger)}
+dialog,.media-dialog{box-shadow:var(--modal-shadow)}
+.media-open{background:var(--soft);border-color:var(--line);color:var(--deep)}
+.media-text{background:var(--surface-alt);color:var(--ink)}
+#connection-status,.history-notice{background:var(--warning-bg);color:var(--warning-ink)}
+.cloud-filter-status{background:var(--soft);color:var(--ink)}
+#toast{background:var(--header-end);color:#fff;border:1px solid #ffffff22}
+@media(min-width:760px){.chat-grid{grid-template-columns:minmax(260px,340px) minmax(0,1fr)}.chat-list{padding:16px}.messages,.cloud-history{padding-inline:clamp(16px,3vw,44px)}.composer{padding-inline:clamp(12px,3vw,44px)}.bottom-nav{padding-inline:max(6px,calc((100% - 760px)/2))}}
+@media(max-width:340px){.top .theme-switch{font-size:.62rem;padding-inline:5px}.top{gap:5px}.login-footer{gap:2px 5px}}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
