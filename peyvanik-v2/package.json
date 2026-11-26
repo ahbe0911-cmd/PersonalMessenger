@@ -1,1 +1,1 @@
-{"type":"module","scripts":{"test":"node --test auth.test.js"}}
+{"type":"module","scripts":{"test":"node --test auth.test.js security.test.js"}}
